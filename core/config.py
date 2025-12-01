@@ -69,13 +69,20 @@ class WxKfSaasConfig(BaseSettings):
     fastapi_port: int = 8083
 
     # ===== 数据库配置(必需) =====
-    db_host: str = "localhost"
-    db_port: int = 3306
-    db_name: str
-    db_user: str
-    db_password: str
+    # 数据库类型支持: mysql, postgresql, sqlite
+    db_type: str = "mysql"
+    db_host: Optional[str] = "localhost"
+    db_port: Optional[int] = 3306
+    db_name: Optional[str] = None
+    db_user: Optional[str] = None
+    db_password: Optional[str] = None
+    db_path: Optional[str] = "./data/app.db"  # SQLite专用
     db_pool_size: int = 10
     db_max_overflow: int = 20
+
+    # 直接配置URL（可选，会覆盖上述参数）
+    database_url: Optional[str] = None  # 同步URL
+    async_database_url: Optional[str] = None  # 异步URL
 
     # ===== Redis配置(推荐) =====
     redis_host: str = "localhost"
@@ -174,23 +181,107 @@ class WxKfSaasConfig(BaseSettings):
             return f"redis://:{self.redis_password}@{self.redis_host}:{self.redis_port}/{self.redis_db}"
         return f"redis://{self.redis_host}:{self.redis_port}/{self.redis_db}"
 
+    @model_validator(mode='after')
+    def validate_database_config(self):
+        """验证数据库配置"""
+        # 如果直接提供了URL，使用URL
+        if self.database_url or self.async_database_url:
+            return self
+
+        # 根据数据库类型验证必需参数
+        if self.db_type == "sqlite":
+            if not self.db_path:
+                raise ValueError("SQLite需要配置db_path")
+        else:
+            # MySQL/PostgreSQL需要连接参数
+            required_fields = ['db_host', 'db_port', 'db_name', 'db_user', 'db_password']
+            missing = [field for field in required_fields if not getattr(self, field)]
+            if missing:
+                raise ValueError(f"{self.db_type}需要配置: {', '.join(missing)}")
+
+        return self
+
+    def _build_url(self, driver: str, is_async: bool = False) -> str:
+        """构建数据库URL的通用方法
+
+        Args:
+            driver: 数据库驱动名称 (pymysql, aiomysql, asyncpg, aiosqlite等)
+            is_async: 是否为异步驱动
+
+        Returns:
+            str: 完整的数据库连接URL
+        """
+        db_type = self.db_type
+        db_path = self.db_path
+        db_user = self.db_user
+        db_password = self.db_password
+        db_host = self.db_host
+        db_port = self.db_port
+        db_name = self.db_name
+
+        if db_type == "sqlite":
+            if is_async:
+                return f"sqlite+{driver}:///{db_path}"
+            else:
+                return f"sqlite+{driver}:///{db_path}"
+
+        # MySQL/PostgreSQL
+        from urllib.parse import quote_plus
+
+        # URL编码用户名和密码
+        username = quote_plus(db_user or "")
+        password = quote_plus(db_password or "")
+
+        # 构建基础URL
+        base_url = f"{db_type}+{driver}://{username}:{password}@{db_host}:{db_port}/{db_name}"
+
+        # 添加额外参数
+        params = []
+
+        if db_type == "mysql":
+            params.append("charset=utf8mb4")
+        elif db_type == "postgresql":
+            # PostgreSQL参数
+            pass
+
+        if params:
+            base_url += "?" + "&".join(params)
+
+        return base_url
+
     @property
     def db_url(self) -> str:
-        """构建数据库连接URL"""
-        return (
-            f"mysql+pymysql://{self.db_user}:{self.db_password}@"
-            f"{self.db_host}:{self.db_port}/{self.db_name}"
-            f"?charset=utf8mb4"
-        )
+        """构建同步数据库连接URL"""
+        # 如果直接配置了URL，直接返回
+        if self.database_url:
+            return self.database_url
+
+        # 根据数据库类型选择驱动
+        if self.db_type == "mysql":
+            return self._build_url("pymysql")
+        elif self.db_type == "postgresql":
+            return self._build_url("psycopg2")
+        elif self.db_type == "sqlite":
+            return self._build_url("sqlite")
+        else:
+            raise ValueError(f"不支持的数据库类型: {self.db_type}")
 
     @property
     def db_async_url(self) -> str:
         """构建异步数据库连接URL"""
-        return (
-            f"mysql+aiomysql://{self.db_user}:{self.db_password}@"
-            f"{self.db_host}:{self.db_port}/{self.db_name}"
-            f"?charset=utf8mb4"
-        )
+        # 如果直接配置了URL，直接返回
+        if self.async_database_url:
+            return self.async_database_url
+
+        # 根据数据库类型选择异步驱动
+        if self.db_type == "mysql":
+            return self._build_url("aiomysql", is_async=True)
+        elif self.db_type == "postgresql":
+            return self._build_url("asyncpg", is_async=True)
+        elif self.db_type == "sqlite":
+            return self._build_url("aiosqlite", is_async=True)
+        else:
+            raise ValueError(f"不支持的数据库类型: {self.db_type}")
 
     @property
     def server_full_url(self) -> Optional[str]:
