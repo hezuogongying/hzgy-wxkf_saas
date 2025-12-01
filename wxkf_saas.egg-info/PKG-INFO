@@ -1,0 +1,17 @@
+Metadata-Version: 2.4
+Name: wxkf_saas
+Version: 1.0.0
+Summary: 微信客服SaaS服务平台
+Requires-Python: >=3.8
+Requires-Dist: fastapi
+Requires-Dist: uvicorn
+Requires-Dist: pydantic
+Requires-Dist: sqlalchemy
+Requires-Dist: asyncmy
+Requires-Dist: pymysql
+Requires-Dist: redis
+Requires-Dist: httpx
+Requires-Dist: python-multipart
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary

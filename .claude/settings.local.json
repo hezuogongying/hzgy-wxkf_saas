@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(python:*)",
+      "Bash(PYTHONPATH=D:\\project\\python\\wxkf_saas python:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(find:*)",
+      "Bash(pip install:*)",
+      "Bash(pip uninstall:*)",
+      "Bash(PYTHONPATH=. python:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

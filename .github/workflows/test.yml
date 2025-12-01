@@ -1,0 +1,116 @@
+name: 测试流水线
+
+on:
+  push:
+    branches: [main, develop, feature/*]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11]
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: test_db
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping -h localhost" --health-interval=10s --health-timeout=5s --health-retries=3
+
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: --health-cmd="pg_isready -U test" --health-interval=10s --health-timeout=5s --health-retries=3
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v3
+
+      - name: 设置Python环境
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: 缓存依赖
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ matrix.python-version }}-pytest-${{ hashFiles('**/requirements*.txt') }}
+
+      - name: 安装测试依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-asyncio pytest-mock pytest-cov pytest-cov-html pytest-xdist
+
+      - name: 运行代码检查
+        run: |
+          python -m pip install flake8 mypy black isort
+          flake8 wxkf_saas --max-line-length=88 --extend-ignore=E203
+          mypy wxkf_saas
+          black --check wxkf_saas --diff
+          isort --check-only wxkf_saas
+
+      - name: 运行单元测试
+        run: |
+          pytest tests/ -m "unit" --cov=wxkf_saas --cov-report=html --cov-report=term-missing --junitxml=junit.xml
+
+      - name: 运行异步测试
+        run: |
+          pytest tests/ -m "asyncio" --cov=wxkf_saas --cov-report=html --cov-append --cov-report=term-missing --junitxml=junit.xml
+
+      - name: 运行集成测试
+        run: |
+          pytest tests/ -m "integration" --cov=wxkf_saas --cov-report=html --cov-append --cov-report=term-missing --junitxml=junit.xml
+
+      - name: 运行性能测试
+        run: |
+          pytest tests/ -m "performance" --cov=wxkf_saas --cov-report=html --cov-append --cov-report=term-missing --junitxml=junit.xml --benchmark-only
+
+      - name: 运行完整测试套件
+        run: |
+          pytest tests/ --cov=wxkf_saas --cov-report=html --cov-report=term-missing --junitxml=junit.xml --timeout=600
+
+      - name: 上传测试报告
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: 测试报告
+          path: htmlcov/
+        if: always()
+        with:
+          name: 覆盖率报告
+          path: coverage.xml
+
+      - name: 生成测试报告摘要
+        run: |
+          echo "## 测试报告摘要" >> $GITHUB_STEP_SUMMARY
+          echo "### 覆盖率" >> $GITHUB_STEP_SUMMARY
+          python -m pip install coverage
+          coverage xml --report >> coverage.xml >> $GITHUB_STEP_SUMMARY
+          echo "### 性能基准" >> $GITHUB_STEP_SUMMARY
+          find htmlcov -name "*.html" -exec basename {} . >> $GITHUB_STEP_SUMMARY
+
+      - name: 检查测试覆盖率
+        run: |
+          python -c "import sys; sys.exit(0 if float(open('htmlcov/index.html').read().split('\'')[1].split('\'')[1].split('\"')[1]) < 80 else 1)"
+
+  coverage:
+    comment:
+      on: pull_request
+      on: [main, develop]
+    file: ./coverage.xml
