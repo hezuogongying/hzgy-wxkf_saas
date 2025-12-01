@@ -16,9 +16,9 @@ project_root = Path(__file__).parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from wxkf_api.core.config import WxKfSaasConfig
-from wxkf_api.core.database import init_database
-from wxkf_api.core.exceptions import (
+from wxkf_saas.core.config import WxKfSaasConfig
+from wxkf_saas.core.database import init_database
+from wxkf_saas.core.exceptions import (
     WxKfApiError,
     TenantNotFoundError,
     TenantNotAuthorizedError,
@@ -27,7 +27,7 @@ from wxkf_api.core.exceptions import (
 )
 
 # 导入路由
-from wxkf_api.routes.tenant import router as tenant_router
+from wxkf_saas.routes.tenant import router as tenant_router
 
 
 # 初始化配置
@@ -51,10 +51,12 @@ async def lifespan(app: FastAPI):
     # 启动时初始化数据库
     print("🚀 正在初始化数据库...")
     try:
-        db_manager = init_database(config)
-        print("✅ 数据库初始化成功")
+        db_manager = await init_database(config)
+        print("✅ 数据库初始化成功（使用异步连接）")
     except Exception as e:
         print(f"❌ 数据库初始化失败: {e}")
+        print("💡 提示：如果异步初始化失败，可能是 aiomysql 驱动问题")
+        print("   请检查 requirements.txt 中是否包含 aiomysql==0.2.0")
         raise
 
     yield

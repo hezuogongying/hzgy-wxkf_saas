@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""数据库管理模块"""
+"""数据库管理模块 - 异步版本"""
 
-from typing import Generator
-from sqlalchemy import create_engine
+from typing import Generator, AsyncGenerator
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import QueuePool
 
@@ -11,7 +11,7 @@ from wxkf_saas.models.tenant import Base
 
 
 class DatabaseManager:
-    """数据库管理器"""
+    """异步数据库管理器"""
 
     def __init__(self, config: WxKfSaasConfig):
         """初始化数据库管理器
@@ -21,9 +21,9 @@ class DatabaseManager:
         """
         self.config = config
 
-        # 创建数据库引擎
-        self.engine = create_engine(
-            config.db_url,
+        # 创建异步数据库引擎
+        self.async_engine = create_async_engine(
+            config.db_async_url,
             poolclass=QueuePool,
             pool_size=config.db_pool_size,
             max_overflow=config.db_max_overflow,
@@ -31,23 +31,60 @@ class DatabaseManager:
             echo=config.log_level == "DEBUG",  # DEBUG模式下打印SQL
         )
 
-        # 创建会话工厂
+        # 创建同步数据库引擎（用于表创建等同步操作）
+        self.sync_engine = create_engine(
+            config.db_url,
+            poolclass=QueuePool,
+            pool_size=config.db_pool_size,
+            max_overflow=config.db_max_overflow,
+            pool_pre_ping=True,
+            echo=config.log_level == "DEBUG",
+        )
+
+        # 创建异步会话工厂
+        self.AsyncSessionLocal = async_sessionmaker(
+            bind=self.async_engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+        )
+
+        # 创建同步会话工厂（备用）
         self.SessionLocal = sessionmaker(
             autocommit=False,
             autoflush=False,
-            bind=self.engine
+            bind=self.sync_engine
         )
 
-    def create_tables(self):
-        """创建所有表"""
-        Base.metadata.create_all(bind=self.engine)
+    async def create_tables(self):
+        """异步创建所有表"""
+        async with self.async_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
 
-    def drop_tables(self):
-        """删除所有表(谨慎使用)"""
-        Base.metadata.drop_all(bind=self.engine)
+    def create_tables_sync(self):
+        """同步创建所有表（备用方法）"""
+        Base.metadata.create_all(bind=self.sync_engine)
+
+    async def drop_tables(self):
+        """异步删除所有表(谨慎使用)"""
+        async with self.async_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+
+    async def get_async_session(self) -> AsyncGenerator[AsyncSession, None]:
+        """获取异步数据库会话
+
+        Yields:
+            AsyncSession: 异步数据库会话
+        """
+        async with self.AsyncSessionLocal() as session:
+            try:
+                yield session
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
 
     def get_session(self) -> Generator[Session, None, None]:
-        """获取数据库会话
+        """获取同步数据库会话（备用）
 
         Yields:
             Session: 数据库会话
@@ -58,17 +95,18 @@ class DatabaseManager:
         finally:
             session.close()
 
-    def close(self):
+    async def close(self):
         """关闭数据库连接"""
-        self.engine.dispose()
+        await self.async_engine.dispose()
+        self.sync_engine.dispose()
 
 
 # 全局数据库管理器实例
 _db_manager: DatabaseManager = None
 
 
-def init_database(config: WxKfSaasConfig) -> DatabaseManager:
-    """初始化数据库
+async def init_database(config: WxKfSaasConfig) -> DatabaseManager:
+    """异步初始化数据库
 
     Args:
         config: SaaS配置对象
@@ -78,7 +116,22 @@ def init_database(config: WxKfSaasConfig) -> DatabaseManager:
     """
     global _db_manager
     _db_manager = DatabaseManager(config)
-    _db_manager.create_tables()
+    await _db_manager.create_tables()
+    return _db_manager
+
+
+def init_database_sync(config: WxKfSaasConfig) -> DatabaseManager:
+    """同步初始化数据库（备用方法）
+
+    Args:
+        config: SaaS配置对象
+
+    Returns:
+        DatabaseManager: 数据库管理器实例
+    """
+    global _db_manager
+    _db_manager = DatabaseManager(config)
+    _db_manager.create_tables_sync()
     return _db_manager
 
 
@@ -97,9 +150,18 @@ def get_db_manager() -> DatabaseManager:
 
 
 def get_db() -> Generator[Session, None, None]:
-    """获取数据库会话(用于依赖注入)
+    """获取同步数据库会话(用于依赖注入，备用)
 
     Yields:
         Session: 数据库会话
     """
     return get_db_manager().get_session()
+
+
+def get_async_db() -> AsyncGenerator[AsyncSession, None]:
+    """获取异步数据库会话(用于依赖注入)
+
+    Yields:
+        AsyncSession: 异步数据库会话
+    """
+    return get_db_manager().get_async_session()
