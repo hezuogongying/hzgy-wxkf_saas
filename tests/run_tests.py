@@ -12,12 +12,15 @@ project_root = Path(__file__).parent.parent
 # 切换到项目根目录
 os.chdir(project_root)
 
-# 使用确认可以工作的测试文件（不包含test_api.py）
+# 使用所有语法正确的测试文件
 test_files = [
     "test_scripts/test_config_simple.py",
     "test_scripts/test_app_startup.py",
     "tests/test_config.py",
-    "tests/test_database.py"
+    "tests/test_database.py",
+    "tests/test_integration.py",
+    "tests/test_message_send_receive.py",
+    "tests/test_performance.py"
 ]
 
 def run_tests():

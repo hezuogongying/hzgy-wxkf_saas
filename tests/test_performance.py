@@ -91,7 +91,7 @@ async def test_memory_usage(test_database):
         assert memory_increase < 100 * 1024 * 1024  # 100MB
 
 
-def test_connection_pool_efficiency():
+async def test_connection_pool_efficiency():
     """测试连接池效率"""
     from wxkf_saas.core.database import DatabaseManager
 
