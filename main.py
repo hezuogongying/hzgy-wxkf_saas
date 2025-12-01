@@ -12,13 +12,14 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
 # 添加项目根目录到 Python 路径
-project_root = Path(__file__).parent.parent
+project_root = Path(__file__).parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from wxkf_saas.core.config import WxKfSaasConfig
-from wxkf_saas.core.database import init_database
-from wxkf_saas.core.exceptions import (
+# 先导入核心模块
+from core.config import WxKfSaasConfig
+from core.database import init_database
+from core.exceptions import (
     WxKfApiError,
     TenantNotFoundError,
     TenantNotAuthorizedError,
@@ -26,8 +27,16 @@ from wxkf_saas.core.exceptions import (
     ConfigurationError
 )
 
-# 导入路由
-from wxkf_saas.routes.tenant import router as tenant_router
+# 添加路径后确保能够导入模块
+if str(project_root) in sys.path:
+    # 导入路由
+    from routes.tenant import router as tenant_router
+    from routes.kf_account import router as kf_account_router
+    from routes.message import router as message_router
+    from routes.media import router as media_router
+    from routes.callback import router as callback_router
+else:
+    raise ImportError("无法添加项目路径到 sys.path")
 
 
 # 初始化配置
@@ -160,6 +169,10 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 # 挂载路由
 app.include_router(tenant_router)
+app.include_router(kf_account_router)
+app.include_router(message_router)
+app.include_router(media_router)
+app.include_router(callback_router)
 
 
 # 健康检查

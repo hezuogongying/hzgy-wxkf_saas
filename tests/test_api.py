@@ -250,8 +250,8 @@ def test_error_handling(test_config):
 
 def test_api_client_methods():
     """测试客户端方法"""
-    from wxkf_saas.core.client import WxKfSaasClient
-    from wxkf_saas.core.config import WxKfSaasConfig
+    from core.client import WxKfSaasClient
+    from core.config import WxKfSaasConfig
 
     config = WxKfSaasConfig(
         SUITE_ID="test_suite",
@@ -277,9 +277,9 @@ def test_api_client_methods():
     assert hasattr(client, '_request_async')
 
     # 测试方法类型
-    from wxkf_saas.api.kf_account import KfAccountApi
-    from wxkf_saas.api.message import MessageApi
-    from wxkf_saas.api.media import MediaApi
+    from api.kf_account import KfAccountApi
+    from api.message import MessageApi
+    from api.media import MediaApi
 
     assert isinstance(client.kf_account, KfAccountApi)
     assert isinstance(client.message, MessageApi)

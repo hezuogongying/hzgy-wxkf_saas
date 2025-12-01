@@ -3,12 +3,19 @@
 
 from typing import TYPE_CHECKING, Optional
 
-from wxkf_saas.models.message import (
+from models.message import (
     SendTextMessageRequest,
     SendImageMessageRequest,
     SendVoiceMessageRequest,
     SendVideoMessageRequest,
     SendFileMessageRequest,
+    SendLocationRequest,
+    SendMiniProgramRequest,
+    SendChannelsShopProductRequest,
+    SendChannelsShopOrderRequest,
+    SendMergedMsgRequest,
+    SendChannelsRequest,
+    SendNoteRequest,
     SendMessageResponse,
     SyncMsgRequest,
     SyncMsgResponse,
@@ -21,6 +28,12 @@ from wxkf_saas.models.message import (
     VoiceContent,
     VideoContent,
     FileContent,
+    LocationContent,
+    MiniProgramContent,
+    ChannelsShopProductContent,
+    ChannelsShopOrderContent,
+    MergedMsgContent,
+    ChannelsContent,
 )
 
 if TYPE_CHECKING:
@@ -168,14 +181,46 @@ class MessageApi:
         media_id: str,
         msgid: Optional[str] = None
     ) -> SendMessageResponse:
-        """发送视频消息
+        """发送视频消息"""
+        request_data = SendVideoMessageRequest(
+            corp_id=corp_id,
+            touser=touser,
+            open_kfid=open_kfid,
+            msgid=msgid,
+            msgtype="video",
+            video=VideoContent(media_id=media_id)
+        )
+
+        return self._client._request(
+            "POST",
+            "/kf/send_msg",
+            response_model=SendMessageResponse,
+            corp_id=corp_id,
+            json_data=request_data.model_dump(exclude_none=True)
+        )
+
+    def send_location(
+        self,
+        corp_id: str,
+        touser: str,
+        open_kfid: str,
+        latitude: float,
+        longitude: float,
+        name: Optional[str] = None,
+        address: Optional[str] = None,
+        msgid: Optional[str] = None
+    ) -> SendMessageResponse:
+        """发送位置消息
 
         Args:
             corp_id: 企业ID
             touser: 接收消息的客户UserID
             open_kfid: 发送消息的客服账号ID
-            media_id: 视频媒体文件ID
-            msgid: 消息ID(可选)
+            latitude: 纬度
+            longitude: 经度
+            name: 位置名
+            address: 地址详情说明
+            msgid: 消息ID(可选),用于去重
 
         Returns:
             SendMessageResponse: 发送结果
@@ -183,12 +228,179 @@ class MessageApi:
         Raises:
             WxKfApiError: API调用失败
         """
-        request_data = SendVideoMessageRequest(
+        request_data = SendLocationRequest(
             touser=touser,
             open_kfid=open_kfid,
             msgid=msgid,
-            msgtype="video",
-            video=VideoContent(media_id=media_id)
+            msgtype="location",
+            location=LocationContent(
+                latitude=latitude,
+                longitude=longitude,
+                name=name,
+                address=address
+            )
+        )
+
+        return self._client._request(
+            "POST",
+            "/kf/send_msg",
+            response_model=SendMessageResponse,
+            corp_id=corp_id,
+            json_data=request_data.model_dump(exclude_none=True)
+        )
+
+    def send_miniprogram(
+        self,
+        corp_id: str,
+        touser: str,
+        open_kfid: str,
+        title: str,
+        appid: str,
+        pagepath: str,
+        thumb_media_id: Optional[str] = None,
+        msgid: Optional[str] = None
+    ) -> SendMessageResponse:
+        """发送小程序消息
+
+        Args:
+            corp_id: 企业ID
+            touser: 接收消息的客户UserID
+            open_kfid: 发送消息的客服账号ID
+            title: 标题
+            appid: 小程序appid
+            pagepath: 点击消息卡片后进入的小程序页面路径
+            thumb_media_id: 小程序消息封面的mediaid
+            msgid: 消息ID(可选),用于去重
+
+        Returns:
+            SendMessageResponse: 发送结果
+
+        Raises:
+            WxKfApiError: API调用失败
+        """
+        request_data = SendMiniProgramRequest(
+            touser=touser,
+            open_kfid=open_kfid,
+            msgid=msgid,
+            msgtype="miniprogram",
+            miniprogram=MiniProgramContent(
+                title=title,
+                appid=appid,
+                pagepath=pagepath,
+                thumb_media_id=thumb_media_id
+            )
+        )
+
+        return self._client._request(
+            "POST",
+            "/kf/send_msg",
+            response_model=SendMessageResponse,
+            corp_id=corp_id,
+            json_data=request_data.model_dump(exclude_none=True)
+        )
+
+    def send_channels_shop_product(
+        self,
+        corp_id: str,
+        touser: str,
+        open_kfid: str,
+        product_id: str,
+        head_image: Optional[str] = None,
+        title: Optional[str] = None,
+        sales_price: Optional[str] = None,
+        shop_nickname: Optional[str] = None,
+        shop_head_image: Optional[str] = None,
+        msgid: Optional[str] = None
+    ) -> SendMessageResponse:
+        """发送视频号商品消息
+
+        Args:
+            corp_id: 企业ID
+            touser: 接收消息的客户UserID
+            open_kfid: 发送消息的客服账号ID
+            product_id: 商品ID
+            head_image: 商品图片
+            title: 商品标题
+            sales_price: 商品价格，以分为单位
+            shop_nickname: 店铺名称
+            shop_head_image: 店铺头像
+            msgid: 消息ID(可选),用于去重
+
+        Returns:
+            SendMessageResponse: 发送结果
+
+        Raises:
+            WxKfApiError: API调用失败
+        """
+        request_data = SendChannelsShopProductRequest(
+            touser=touser,
+            open_kfid=open_kfid,
+            msgid=msgid,
+            msgtype="channels_shop_product",
+            channels_shop_product=ChannelsShopProductContent(
+                product_id=product_id,
+                head_image=head_image,
+                title=title,
+                sales_price=sales_price,
+                shop_nickname=shop_nickname,
+                shop_head_image=shop_head_image
+            )
+        )
+
+        return self._client._request(
+            "POST",
+            "/kf/send_msg",
+            response_model=SendMessageResponse,
+            corp_id=corp_id,
+            json_data=request_data.model_dump(exclude_none=True)
+        )
+
+    def send_channels_shop_order(
+        self,
+        corp_id: str,
+        touser: str,
+        open_kfid: str,
+        order_id: str,
+        product_titles: Optional[str] = None,
+        price_wording: Optional[str] = None,
+        state: Optional[str] = None,
+        image_url: Optional[str] = None,
+        shop_nickname: Optional[str] = None,
+        msgid: Optional[str] = None
+    ) -> SendMessageResponse:
+        """发送视频号订单消息
+
+        Args:
+            corp_id: 企业ID
+            touser: 接收消息的客户UserID
+            open_kfid: 发送消息的客服账号ID
+            order_id: 订单号
+            product_titles: 商品标题
+            price_wording: 订单价格描述
+            state: 订单状态
+            image_url: 订单缩略图
+            shop_nickname: 店铺名称
+            msgid: 消息ID(可选),用于去重
+
+        Returns:
+            SendMessageResponse: 发送结果
+
+        Raises:
+            WxKfApiError: API调用失败
+        """
+        request_data = SendChannelsShopOrderRequest(
+            touser=touser,
+            open_kfid=open_kfid,
+            msgid=msgid,
+            msgtype="channels_shop_order",
+            channels_shop_order=ChannelsShopOrderContent(
+                order_id=order_id,
+                product_titles=product_titles,
+                price_wording=price_wording,
+                state=state,
+                image_url=image_url,
+                shop_nickname=shop_nickname
+            )
         )
 
         return self._client._request(
@@ -364,4 +576,364 @@ class MessageApi:
             response_model=RecallMessageResponse,
             corp_id=corp_id,
             json_data=request_data.model_dump()
+        )
+
+    def send_location(
+        self,
+        corp_id: str,
+        touser: str,
+        open_kfid: str,
+        latitude: float,
+        longitude: float,
+        name: Optional[str] = None,
+        address: Optional[str] = None,
+        msgid: Optional[str] = None
+    ) -> SendMessageResponse:
+        """发送位置消息
+
+        Args:
+            corp_id: 企业ID
+            touser: 接收消息的客户UserID
+            open_kfid: 发送消息的客服账号ID
+            latitude: 纬度
+            longitude: 经度
+            name: 位置名
+            address: 地址详情说明
+            msgid: 消息ID(可选),用于去重
+
+        Returns:
+            SendMessageResponse: 发送结果
+
+        Raises:
+            WxKfApiError: API调用失败
+
+        文档: https://developer.work.weixin.qq.com/document/path/94744
+        """
+        request_data = {
+            "corp_id": corp_id,
+            "touser": touser,
+            "open_kfid": open_kfid,
+            "msgid": msgid,
+            "msgtype": "location",
+            "location": {
+                "latitude": latitude,
+                "longitude": longitude,
+                "name": name,
+                "address": address
+            }
+        }
+
+        return self._client._request(
+            "POST",
+            "/kf/send_msg",
+            response_model=SendMessageResponse,
+            corp_id=corp_id,
+            json_data=request_data
+        )
+
+    def send_miniprogram(
+        self,
+        corp_id: str,
+        touser: str,
+        open_kfid: str,
+        title: str,
+        appid: str,
+        pagepath: str,
+        thumb_media_id: Optional[str] = None,
+        msgid: Optional[str] = None
+    ) -> SendMessageResponse:
+        """发送小程序消息
+
+        Args:
+            corp_id: 企业ID
+            touser: 接收消息的客户UserID
+            open_kfid: 发送消息的客服账号ID
+            title: 标题
+            appid: 小程序appid
+            pagepath: 点击消息卡片后进入的小程序页面路径
+            thumb_media_id: 小程序消息封面的mediaid
+            msgid: 消息ID(可选),用于去重
+
+        Returns:
+            SendMessageResponse: 发送结果
+
+        Raises:
+            WxKfApiError: API调用失败
+
+        文档: https://developer.work.weixin.qq.com/document/path/94744
+        """
+        request_data = {
+            "corp_id": corp_id,
+            "touser": touser,
+            "open_kfid": open_kfid,
+            "msgid": msgid,
+            "msgtype": "miniprogram",
+            "miniprogram": {
+                "title": title,
+                "appid": appid,
+                "pagepath": pagepath,
+                "thumb_media_id": thumb_media_id
+            }
+        }
+
+        return self._client._request(
+            "POST",
+            "/kf/send_msg",
+            response_model=SendMessageResponse,
+            corp_id=corp_id,
+            json_data=request_data
+        )
+
+    def send_channels_shop_product(
+        self,
+        corp_id: str,
+        touser: str,
+        open_kfid: str,
+        product_id: str,
+        head_image: Optional[str] = None,
+        title: Optional[str] = None,
+        sales_price: Optional[str] = None,
+        shop_nickname: Optional[str] = None,
+        shop_head_image: Optional[str] = None,
+        msgid: Optional[str] = None
+    ) -> SendMessageResponse:
+        """发送视频号商品消息
+
+        Args:
+            corp_id: 企业ID
+            touser: 接收消息的客户UserID
+            open_kfid: 发送消息的客服账号ID
+            product_id: 商品ID
+            head_image: 商品图片
+            title: 商品标题
+            sales_price: 商品价格，以分为单位
+            shop_nickname: 店铺名称
+            shop_head_image: 店铺头像
+            msgid: 消息ID(可选),用于去重
+
+        Returns:
+            SendMessageResponse: 发送结果
+
+        Raises:
+            WxKfApiError: API调用失败
+
+        文档: https://developer.work.weixin.qq.com/document/path/94744
+        """
+        request_data = {
+            "corp_id": corp_id,
+            "touser": touser,
+            "open_kfid": open_kfid,
+            "msgid": msgid,
+            "msgtype": "channels_shop_product",
+            "channels_shop_product": {
+                "product_id": product_id,
+                "head_image": head_image,
+                "title": title,
+                "sales_price": sales_price,
+                "shop_nickname": shop_nickname,
+                "shop_head_image": shop_head_image
+            }
+        }
+
+        return self._client._request(
+            "POST",
+            "/kf/send_msg",
+            response_model=SendMessageResponse,
+            corp_id=corp_id,
+            json_data=request_data
+        )
+
+    def send_channels_shop_order(
+        self,
+        corp_id: str,
+        touser: str,
+        open_kfid: str,
+        order_id: str,
+        product_titles: Optional[str] = None,
+        price_wording: Optional[str] = None,
+        state: Optional[str] = None,
+        image_url: Optional[str] = None,
+        shop_nickname: Optional[str] = None,
+        msgid: Optional[str] = None
+    ) -> SendMessageResponse:
+        """发送视频号订单消息
+
+        Args:
+            corp_id: 企业ID
+            touser: 接收消息的客户UserID
+            open_kfid: 发送消息的客服账号ID
+            order_id: 订单号
+            product_titles: 商品标题
+            price_wording: 订单价格描述
+            state: 订单状态
+            image_url: 订单缩略图
+            shop_nickname: 店铺名称
+            msgid: 消息ID(可选),用于去重
+
+        Returns:
+            SendMessageResponse: 发送结果
+
+        Raises:
+            WxKfApiError: API调用失败
+
+        文档: https://developer.work.weixin.qq.com/document/path/94744
+        """
+        request_data = {
+            "corp_id": corp_id,
+            "touser": touser,
+            "open_kfid": open_kfid,
+            "msgid": msgid,
+            "msgtype": "channels_shop_order",
+            "channels_shop_order": {
+                "order_id": order_id,
+                "product_titles": product_titles,
+                "price_wording": price_wording,
+                "state": state,
+                "image_url": image_url,
+                "shop_nickname": shop_nickname
+            }
+        }
+
+        return self._client._request(
+            "POST",
+            "/kf/send_msg",
+            response_model=SendMessageResponse,
+            corp_id=corp_id,
+            json_data=request_data
+        )
+
+    def send_merged_msg(
+        self,
+        corp_id: str,
+        touser: str,
+        open_kfid: str,
+        title: str,
+        item: list,
+        msgid: Optional[str] = None
+    ) -> SendMessageResponse:
+        """发送聊天记录消息
+
+        Args:
+            corp_id: 企业ID
+            touser: 接收消息的客户UserID
+            open_kfid: 发送消息的客服账号ID
+            title: 聊天记录标题
+            item: 消息记录内的消息内容
+            msgid: 消息ID(可选),用于去重
+
+        Returns:
+            SendMessageResponse: 发送结果
+
+        Raises:
+            WxKfApiError: API调用失败
+
+        文档: https://developer.work.weixin.qq.com/document/path/94744
+        """
+        request_data = {
+            "corp_id": corp_id,
+            "touser": touser,
+            "open_kfid": open_kfid,
+            "msgid": msgid,
+            "msgtype": "merged_msg",
+            "merged_msg": {
+                "title": title,
+                "item": item
+            }
+        }
+
+        return self._client._request(
+            "POST",
+            "/kf/send_msg",
+            response_model=SendMessageResponse,
+            corp_id=corp_id,
+            json_data=request_data
+        )
+
+    def send_channels(
+        self,
+        corp_id: str,
+        touser: str,
+        open_kfid: str,
+        sub_type: int,
+        nickname: Optional[str] = None,
+        title: Optional[str] = None,
+        msgid: Optional[str] = None
+    ) -> SendMessageResponse:
+        """发送视频号消息
+
+        Args:
+            corp_id: 企业ID
+            touser: 接收消息的客户UserID
+            open_kfid: 发送消息的客服账号ID
+            sub_type: 视频号消息类型，1视频号动态、2视频号直播、3视频号名片
+            nickname: 视频号名称
+            title: 视频号动态标题，视频号消息类型为1时返回
+            msgid: 消息ID(可选),用于去重
+
+        Returns:
+            SendMessageResponse: 发送结果
+
+        Raises:
+            WxKfApiError: API调用失败
+
+        文档: https://developer.work.weixin.qq.com/document/path/94744
+        """
+        request_data = {
+            "corp_id": corp_id,
+            "touser": touser,
+            "open_kfid": open_kfid,
+            "msgid": msgid,
+            "msgtype": "channels",
+            "channels": {
+                "sub_type": sub_type,
+                "nickname": nickname,
+                "title": title
+            }
+        }
+
+        return self._client._request(
+            "POST",
+            "/kf/send_msg",
+            response_model=SendMessageResponse,
+            corp_id=corp_id,
+            json_data=request_data
+        )
+
+    def send_note(
+        self,
+        corp_id: str,
+        touser: str,
+        open_kfid: str,
+        msgid: Optional[str] = None
+    ) -> SendMessageResponse:
+        """发送笔记消息
+
+        Args:
+            corp_id: 企业ID
+            touser: 接收消息的客户UserID
+            open_kfid: 发送消息的客服账号ID
+            msgid: 消息ID(可选),用于去重
+
+        Returns:
+            SendMessageResponse: 发送结果
+
+        Raises:
+            WxKfApiError: API调用失败
+
+        文档: https://developer.work.weixin.qq.com/document/path/94744
+        """
+        request_data = {
+            "corp_id": corp_id,
+            "touser": touser,
+            "open_kfid": open_kfid,
+            "msgid": msgid,
+            "msgtype": "note"
+        }
+
+        return self._client._request(
+            "POST",
+            "/kf/send_msg",
+            response_model=SendMessageResponse,
+            corp_id=corp_id,
+            json_data=request_data
         )

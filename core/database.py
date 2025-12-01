@@ -5,9 +5,10 @@ from typing import Generator, AsyncGenerator
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import QueuePool
+from sqlalchemy import create_engine
 
-from wxkf_saas.core.config import WxKfSaasConfig
-from wxkf_saas.models.tenant import Base
+from core.config import WxKfSaasConfig
+from models.tenant import Base
 
 
 class DatabaseManager:

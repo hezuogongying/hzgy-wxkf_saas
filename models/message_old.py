@@ -71,34 +71,6 @@ class SendFileMessageRequest(SendMessageRequest):
     file: FileContent = Field(..., description="文件消息内容")
 
 
-class LocationContent(WxKfBaseModel):
-    """位置消息内容"""
-    latitude: float = Field(..., description="纬度")
-    longitude: float = Field(..., description="经度")
-    name: Optional[str] = Field(None, description="位置名")
-    address: Optional[str] = Field(None, description="地址详情说明")
-
-
-class SendLocationRequest(SendMessageRequest):
-    """发送位置消息请求"""
-    msgtype: str = Field("location", description="消息类型")
-    location: LocationContent = Field(..., description="位置消息内容")
-
-
-class MiniProgramContent(WxKfBaseModel):
-    """小程序消息内容"""
-    title: str = Field(..., description="标题")
-    appid: str = Field(..., description="小程序appid")
-    pagepath: str = Field(..., description="点击消息卡片后进入的小程序页面路径")
-    thumb_media_id: Optional[str] = Field(None, description="小程序消息封面的mediaid")
-
-
-class SendMiniProgramRequest(SendMessageRequest):
-    """发送小程序消息请求"""
-    msgtype: str = Field("miniprogram", description="消息类型")
-    miniprogram: MiniProgramContent = Field(..., description="小程序消息内容")
-
-
 class ChannelsShopProductContent(WxKfBaseModel):
     """视频号商品消息内容"""
     product_id: str = Field(..., description="商品ID")
@@ -131,10 +103,38 @@ class SendChannelsShopOrderRequest(SendMessageRequest):
     channels_shop_order: ChannelsShopOrderContent = Field(..., description="视频号订单消息内容")
 
 
+class MiniProgramContent(WxKfBaseModel):
+    """小程序消息内容"""
+    title: str = Field(..., description="标题")
+    appid: str = Field(..., description="小程序appid")
+    pagepath: str = Field(..., description="点击消息卡片后进入的小程序页面路径")
+    thumb_media_id: Optional[str] = Field(None, description="小程序消息封面的mediaid")
+
+
+class SendMiniProgramRequest(SendMessageRequest):
+    """发送小程序消息请求"""
+    msgtype: str = Field("miniprogram", description="消息类型")
+    miniprogram: MiniProgramContent = Field(..., description="小程序消息内容")
+
+
+class LocationContent(WxKfBaseModel):
+    """位置消息内容"""
+    latitude: float = Field(..., description="纬度")
+    longitude: float = Field(..., description="经度")
+    name: Optional[str] = Field(None, description="位置名")
+    address: Optional[str] = Field(None, description="地址详情说明")
+
+
+class SendLocationRequest(SendMessageRequest):
+    """发送位置消息请求"""
+    msgtype: str = Field("location", description="消息类型")
+    location: LocationContent = Field(..., description="位置消息内容")
+
+
 class MergedMsgContent(WxKfBaseModel):
     """聊天记录消息内容"""
     title: str = Field(..., description="聊天记录标题")
-    item: List[Dict[str, Any]] = Field(..., description="消息记录内的消息内容")
+    item: list = Field(..., description="消息记录内的消息内容")
 
 
 class SendMergedMsgRequest(SendMessageRequest):
@@ -162,24 +162,6 @@ class SendNoteRequest(SendMessageRequest):
     # 笔记消息目前暂不返回详细消息内容
 
 
-class SendVideoOrderNumberRequestModel(WxKfBaseModel):
-    """发送视频号订单号消息请求模型"""
-    corp_id: str = Field(..., description="企业ID")
-    touser: str = Field(..., description="指定接收消息的客户UserID")
-    open_kfid: str = Field(..., description="指定发送消息的客服账号ID")
-    video_order_number: str = Field(..., description="视频号订单号")
-    msgid: Optional[str] = Field(None, description="消息ID,用于去重")
-
-
-class SendVideoOrderMessageRequestModel(WxKfBaseModel):
-    """发送视频号订单消息请求模型"""
-    corp_id: str = Field(..., description="企业ID")
-    touser: str = Field(..., description="指定接收消息的客户UserID")
-    open_kfid: str = Field(..., description="指定发送消息的客服账号ID")
-    video_order_message: str = Field(..., description="视频号订单消息")
-    msgid: Optional[str] = Field(None, description="消息ID,用于去重")
-
-
 # ===== 同步消息相关模型 =====
 
 class SyncMsgRequest(WxKfBaseModel):
@@ -199,20 +181,6 @@ class SyncMsgRequest(WxKfBaseModel):
     open_kfid: Optional[str] = Field(None, description="指定拉取某个客服账号的消息")
 
 
-class EventContent(WxKfBaseModel):
-    """事件消息内容"""
-    event_type: str = Field(..., description="事件类型")
-    open_kfid: Optional[str] = Field(None, description="客服账号ID")
-    external_userid: Optional[str] = Field(None, description="客户UserID")
-    scene: Optional[str] = Field(None, description="场景值")
-    scene_param: Optional[str] = Field(None, description="场景参数")
-    welcome_code: Optional[str] = Field(None, description="欢迎语code")
-    fail_msgid: Optional[str] = Field(None, description="发送失败的消息ID")
-    fail_type: Optional[int] = Field(None, description="失败类型")
-    recall_msgid: Optional[str] = Field(None, description="撤回的消息ID")
-    wechat_channels: Optional[Dict[str, Any]] = Field(None, description="进入会话的视频号信息")
-
-
 class MessageItem(WxKfBaseModel):
     """消息项"""
     msgid: str = Field(..., description="消息ID")
@@ -221,20 +189,17 @@ class MessageItem(WxKfBaseModel):
     send_time: int = Field(..., description="消息发送时间戳")
     origin: int = Field(..., description="消息来源,3-客户回复 4-系统推送")
     msgtype: str = Field(..., description="消息类型")
-
     # 根据msgtype不同,会有不同的消息内容字段
     text: Optional[TextContent] = Field(None, description="文本消息内容")
     image: Optional[ImageContent] = Field(None, description="图片消息内容")
     voice: Optional[VoiceContent] = Field(None, description="语音消息内容")
     video: Optional[VideoContent] = Field(None, description="视频消息内容")
     file: Optional[FileContent] = Field(None, description="文件消息内容")
-    location: Optional[LocationContent] = Field(None, description="位置消息内容")
-    miniprogram: Optional[MiniProgramContent] = Field(None, description="小程序消息内容")
-    channels_shop_product: Optional[ChannelsShopProductContent] = Field(None, description="视频号商品消息内容")
-    channels_shop_order: Optional[ChannelsShopOrderContent] = Field(None, description="视频号订单消息内容")
-    merged_msg: Optional[MergedMsgContent] = Field(None, description="聊天记录消息内容")
-    channels: Optional[ChannelsContent] = Field(None, description="视频号消息内容")
-    event: Optional[EventContent] = Field(None, description="事件内容")
+    event: Optional[Dict[str, Any]] = Field(None, description="事件内容")
+
+    # 视频号订单消息相关字段
+    video_order_number: Optional[str] = Field(None, description="视频号订单号")
+    video_order_message: Optional[str] = Field(None, description="视频订单消息")
 
 
 class SyncMsgResponse(SuccessResponse):
@@ -260,7 +225,6 @@ class SendWelcomeRequest(WxKfBaseModel):
     # 根据msgtype不同,需要包含不同的消息内容字段
     text: Optional[TextContent] = Field(None, description="文本消息内容")
     image: Optional[ImageContent] = Field(None, description="图片消息内容")
-    miniprogram: Optional[MiniProgramContent] = Field(None, description="小程序消息内容")
 
 
 class SendWelcomeResponse(SuccessResponse):

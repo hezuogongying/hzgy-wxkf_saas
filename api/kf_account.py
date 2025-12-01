@@ -3,7 +3,7 @@
 
 from typing import TYPE_CHECKING, List
 
-from wxkf_saas.models.kf_account import (
+from models.kf_account import (
     AddKfAccountRequest,
     AddKfAccountResponse,
     UpdateKfAccountRequest,

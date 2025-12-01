@@ -2,7 +2,7 @@
 """素材管理相关数据模型"""
 
 from pydantic import Field
-from wxkf_saas.models.base import WxKfBaseModel, SuccessResponse
+from models.base import WxKfBaseModel, SuccessResponse
 
 
 class UploadMediaResponse(SuccessResponse):

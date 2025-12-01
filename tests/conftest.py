@@ -2,9 +2,9 @@
 """pytest配置文件"""
 
 import os
+import sys
 import pytest
 import asyncio
-import sys
 import logging
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
@@ -12,14 +12,17 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+# 确保 os 模块可用
+assert os is not None
+
 # 添加项目根目录到 Python 路径
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from wxkf_saas.core.config import WxKfSaasConfig
-from wxkf_saas.core.database import DatabaseManager
-from wxkf_saas.core.client import WxKfSaasClient
-from wxkf_saas.models.tenant import Tenant, TenantToken
+from core.config import WxKfSaasConfig
+from core.database import DatabaseManager
+from core.client import WxKfSaasClient
+from models.tenant import Tenant, TenantToken
 
 
 @pytest.fixture(scope="session")

@@ -4,6 +4,8 @@ dev_docs/
 dev_tmp/
 test_scripts/
 logs/
+__pycache__/
+htmlcov/
 
-
+*.pyc
 .env

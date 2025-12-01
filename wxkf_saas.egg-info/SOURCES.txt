@@ -19,6 +19,9 @@ models/message.py
 models/tenant.py
 routes/__init__.py
 routes/callback.py
+routes/kf_account.py
+routes/media.py
+routes/message.py
 routes/tenant.py
 tests/__init__.py
 tests/conftest.py

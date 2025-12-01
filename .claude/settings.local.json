@@ -10,7 +10,20 @@
       "Bash(pip install:*)",
       "Bash(pip uninstall:*)",
       "Bash(PYTHONPATH=. python:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "mcp__chrome-devtools__click",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(curl:*)",
+      "Bash(taskkill:*)",
+      "Bash(powershell:*)",
+      "mcp__chrome-devtools__new_page",
+      "mcp__chrome-devtools__select_page",
+      "mcp__chrome-devtools__take_snapshot",
+      "mcp__chrome-devtools__evaluate_script",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)",
+      "Bash(git remote set-url:*)"
     ],
     "deny": [],
     "ask": []

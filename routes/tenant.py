@@ -5,8 +5,8 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from wxkf_saas.core.database import get_db
-from wxkf_saas.models.tenant import (
+from core.database import get_db
+from models.tenant import (
     Tenant,
     TenantCreate,
     TenantUpdate,

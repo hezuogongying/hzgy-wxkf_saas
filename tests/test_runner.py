@@ -11,7 +11,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 
-def run_pytest(test_target=None, extra_args=None, verbose=False, log_level="INFO", log_to_file=False, clear_logs=False):
+def run_pytest(test_target=None, extra_args=None, verbose=False, log_level="INFO", log_to_file=False, clear_logs=True):
     """运行pytest测试"""
     cmd = [sys.executable, "-m", "pytest"]
 

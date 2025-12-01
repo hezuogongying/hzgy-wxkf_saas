@@ -4,7 +4,6 @@
 import pytest
 from pydantic import ValidationError
 
-
 @pytest.mark.unit
 def test_config_validation(configure_test_logging):
     """测试配置验证"""

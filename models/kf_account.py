@@ -3,7 +3,7 @@
 
 from typing import Optional, List
 from pydantic import Field
-from wxkf_saas.models.base import WxKfBaseModel, SuccessResponse
+from models.base import WxKfBaseModel, SuccessResponse
 
 
 # ===== 请求模型 =====
@@ -103,3 +103,10 @@ class GetCustomerInfoResponse(SuccessResponse):
         default_factory=list,
         description="无效的external_userid列表"
     )
+
+
+# 路由需要的额外模型
+class GetKfAccountListRequest(WxKfBaseModel):
+    """获取客服账号列表请求"""
+    offset: Optional[int] = Field(0, ge=0, description="偏移量")
+    limit: Optional[int] = Field(100, ge=1, le=1000, description="限制数量")
