@@ -6,23 +6,45 @@ from pydantic import ValidationError
 
 
 @pytest.mark.unit
-def test_config_validation():
+def test_config_validation(configure_test_logging):
     """测试配置验证"""
+    test_logger = configure_test_logging
+    test_logger.info("🔧 开始配置验证测试")
+
     from wxkf_saas.core.config import WxKfSaasConfig
+    test_logger.debug("导入WxKfSaasConfig成功")
 
     # 测试从环境变量加载的配置
     config = WxKfSaasConfig()
+    test_logger.debug(f"配置对象创建: {type(config)}")
+    test_logger.debug(f"配置suite_id: {getattr(config, 'suite_id', 'N/A')}")
 
     # 验证配置对象创建成功
+    test_logger.debug("验证配置对象属性...")
     assert config is not None
+    test_logger.debug("✅ 配置对象不为None")
+
     assert hasattr(config, 'suite_id')
+    test_logger.debug("✅ suite_id属性存在")
+
     assert hasattr(config, 'db_type')
+    test_logger.debug("✅ db_type属性存在")
+
     assert hasattr(config, 'db_port')
+    test_logger.debug("✅ db_port属性存在")
 
     # 验证基本属性类型
+    test_logger.debug("验证属性类型...")
     assert isinstance(config.suite_id, str)
+    test_logger.debug(f"✅ suite_id类型正确: {type(config.suite_id)}")
+
     assert isinstance(config.db_type, str)
+    test_logger.debug(f"✅ db_type类型正确: {type(config.db_type)}")
+
     assert isinstance(config.db_port, int)
+    test_logger.debug(f"✅ db_port类型正确: {type(config.db_port)}")
+
+    test_logger.info("🎯 配置验证测试通过")
 
 
 def test_config_validation_missing_fields():

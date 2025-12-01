@@ -1,0 +1,28 @@
+2025-12-01 16:50:41 - wxkf_saas_test - INFO - configure_test_logging:212 - 🧪 开始测试: test_config_validation
+2025-12-01 16:50:41 - wxkf_saas_test - INFO - test_config_validation:12 - 🔧 开始配置验证测试
+2025-12-01 16:50:41 - wxkf_saas_test - DEBUG - test_config_validation:15 - 导入WxKfSaasConfig成功
+2025-12-01 16:50:41 - wxkf_saas_test - DEBUG - test_config_validation:19 - 配置对象创建: <class 'wxkf_saas.core.config.WxKfSaasConfig'>
+2025-12-01 16:50:41 - wxkf_saas_test - DEBUG - test_config_validation:20 - 配置suite_id: your_suite_id
+2025-12-01 16:50:41 - wxkf_saas_test - DEBUG - test_config_validation:23 - 验证配置对象属性...
+2025-12-01 16:50:41 - wxkf_saas_test - DEBUG - test_config_validation:25 - ✅ 配置对象不为None
+2025-12-01 16:50:41 - wxkf_saas_test - DEBUG - test_config_validation:28 - ✅ suite_id属性存在
+2025-12-01 16:50:41 - wxkf_saas_test - DEBUG - test_config_validation:31 - ✅ db_type属性存在
+2025-12-01 16:50:41 - wxkf_saas_test - DEBUG - test_config_validation:34 - ✅ db_port属性存在
+2025-12-01 16:50:41 - wxkf_saas_test - DEBUG - test_config_validation:37 - 验证属性类型...
+2025-12-01 16:50:41 - wxkf_saas_test - DEBUG - test_config_validation:39 - ✅ suite_id类型正确: <class 'str'>
+2025-12-01 16:50:41 - wxkf_saas_test - DEBUG - test_config_validation:42 - ✅ db_type类型正确: <class 'str'>
+2025-12-01 16:50:41 - wxkf_saas_test - DEBUG - test_config_validation:45 - ✅ db_port类型正确: <class 'int'>
+2025-12-01 16:50:41 - wxkf_saas_test - INFO - test_config_validation:47 - 🎯 配置验证测试通过
+2025-12-01 16:50:41 - wxkf_saas_test - INFO - configure_test_logging:217 - ✅ 完成测试: test_config_validation
+2025-12-01 16:50:41 - wxkf_saas_test - INFO - configure_test_logging:212 - 🧪 开始测试: test_config_validation_missing_fields
+2025-12-01 16:50:41 - wxkf_saas_test - INFO - configure_test_logging:217 - ✅ 完成测试: test_config_validation_missing_fields
+2025-12-01 16:50:41 - wxkf_saas_test - INFO - configure_test_logging:212 - 🧪 开始测试: test_multi_database_config
+2025-12-01 16:50:41 - wxkf_saas_test - INFO - configure_test_logging:217 - ✅ 完成测试: test_multi_database_config
+2025-12-01 16:50:41 - wxkf_saas_test - INFO - configure_test_logging:212 - 🧪 开始测试: test_direct_url_config
+2025-12-01 16:50:41 - wxkf_saas_test - INFO - configure_test_logging:217 - ✅ 完成测试: test_direct_url_config
+2025-12-01 16:50:41 - wxkf_saas_test - INFO - configure_test_logging:212 - 🧪 开始测试: test_config_properties
+2025-12-01 16:50:41 - wxkf_saas_test - INFO - configure_test_logging:217 - ✅ 完成测试: test_config_properties
+2025-12-01 16:50:41 - wxkf_saas_test - INFO - configure_test_logging:212 - 🧪 开始测试: test_invalid_database_type
+2025-12-01 16:50:41 - wxkf_saas_test - INFO - configure_test_logging:217 - ✅ 完成测试: test_invalid_database_type
+2025-12-01 16:50:41 - wxkf_saas_test - INFO - configure_test_logging:212 - 🧪 开始测试: test_sqlite_missing_path
+2025-12-01 16:50:41 - wxkf_saas_test - INFO - configure_test_logging:217 - ✅ 完成测试: test_sqlite_missing_path
