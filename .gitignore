@@ -1,0 +1,9 @@
+venv/
+docs/
+dev_docs/
+dev_tmp/
+test_scripts/
+
+
+
+.env
