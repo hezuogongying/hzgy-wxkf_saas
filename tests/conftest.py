@@ -145,37 +145,12 @@ def sample_tenant_token():
 
 
 # 测试数据清理
-@pytest.fixture(autouse=True)
-async def cleanup_test_data():
+@pytest.fixture
+def cleanup_test_data():
     """自动清理测试数据"""
     yield
     # 在测试后清理任何需要清理的数据
     pass
 
 
-# 覆盖率配置
-pytest_plugins = [
-    "pytest-cov",
-    "pytest-asyncio",
-    "pytest-mock"
-]
-
-# 覆盖率配置
-[tool:pytest]
-coverage_run = {
-    "source": ["wxkf_saas"],
-    "omit": [
-        "*/test_scripts/*",
-        "*/venv/*",
-        "*/tests/*",
-    ]
-}
-coverage_report = {
-    "show_missing": True,
-    "precision": 2,
-    "fail_under": 80,
-    "skip_covered": False,
-}
-coverage_html = {
-    "directory": "htmlcov",
-}
+# pytest插件配置 - 暂时移除插件依赖

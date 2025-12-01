@@ -24,6 +24,7 @@ def test_client_initialization(test_config):
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_kf_account_api():
     """测试客服账号API"""
     from wxkf_saas.api.kf_account import KfAccountApi
@@ -220,7 +221,7 @@ def test_error_handling():
     client = WxKfSaasClient(test_config)
 
     async def test_api_error():
-    """测试API错误处理"""
+        """测试API错误处理"""
     api_error_response = {
         "errcode": 40001,
         "errmsg": "invalid corp_id"

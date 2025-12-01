@@ -6,17 +6,12 @@ import asyncio
 from unittest.mock import AsyncMock, patch
 import json
 
-try:
-    from wxkf_saas.core.client import WxKfSaasClient
-    from wxkf_saas.models.tenant import Tenant, TenantToken
-except ImportError:
-    # 如果wxkf_saas包不可用，跳过此测试
-    import sys
-    print("⚠️ wxkf_saas包不可用，跳过集成测试")
-    sys.exit(0)
+from wxkf_saas.core.client import WxKfSaasClient
+from wxkf_saas.models.tenant import Tenant, TenantToken
 
 
 @pytest.mark.asyncio
+@pytest.mark.integration
 async def test_full_api_workflow(test_config):
     """测试完整的API工作流程"""
     from wxkf_saas.core.database import get_async_db

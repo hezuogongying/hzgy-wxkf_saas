@@ -10,6 +10,7 @@ import statistics
 
 
 @pytest.mark.asyncio
+@pytest.mark.performance
 async def test_database_performance(test_database):
     """测试数据库性能"""
     from wxkf_saas.models.tenant import Tenant

@@ -7,6 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
+@pytest.mark.unit
 async def test_database_connection(test_config):
     """测试数据库连接"""
     from wxkf_saas.core.database import DatabaseManager

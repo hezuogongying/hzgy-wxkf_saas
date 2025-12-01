@@ -9,7 +9,8 @@
       "Bash(find:*)",
       "Bash(pip install:*)",
       "Bash(pip uninstall:*)",
-      "Bash(PYTHONPATH=. python:*)"
+      "Bash(PYTHONPATH=. python:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []
