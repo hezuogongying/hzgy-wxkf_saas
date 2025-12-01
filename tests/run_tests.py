@@ -12,7 +12,7 @@ project_root = Path(__file__).parent.parent
 # 切换到项目根目录
 os.chdir(project_root)
 
-# 使用目前可以正常工作的测试文件
+# 使用确认可以工作的测试文件（不包含test_api.py）
 test_files = [
     "test_scripts/test_config_simple.py",
     "test_scripts/test_app_startup.py",

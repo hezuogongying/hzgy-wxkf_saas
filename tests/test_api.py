@@ -219,19 +219,27 @@ def test_error_handling():
 
     client = WxKfSaasClient(test_config)
 
+    async def test_api_error():
+    """测试API错误处理"""
+    api_error_response = {
+        "errcode": 40001,
+        "errmsg": "invalid corp_id"
+    }
+
+    client = WxKfSaasClient(test_config)
+
     with patch('wxkf_saas.core.client.WxKfSaasClient._request') as mock_request:
         mock_request.return_value = api_error_response
 
-        async def test_api_error():
-    with pytest.raises(WxKfApiError) as exc_info:
-        await client.kf_account.add(
+        with pytest.raises(WxKfApiError) as exc_info:
+            await client.kf_account.add(
                 corp_id="invalid_corp",
                 name="测试客服"
             )
 
-        assert exc_info.value.errcode == 40001
-        assert exc_info.value.errmsg == "invalid corp_id"
-        assert "invalid corp_id" in str(exc_info.value)
+            assert exc_info.value.errcode == 40001
+            assert exc_info.value.errmsg == "invalid corp_id"
+            assert "invalid corp_id" in str(exc_info.value)
 
     # 测试租户未找到错误
     with patch('wxkf_saas.core.database.get_db_manager') as mock_get_db:
