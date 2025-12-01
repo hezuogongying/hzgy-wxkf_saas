@@ -4,10 +4,10 @@
 from typing import TYPE_CHECKING, BinaryIO
 from pathlib import Path
 
-from wxkf_api.models.media import UploadMediaResponse, GetMediaResponse
+from wxkf_saas.models.media import UploadMediaResponse, GetMediaResponse
 
 if TYPE_CHECKING:
-    from wxkf_api.core.client import WxKfSaasClient
+    from wxkf_saas.core.client import WxKfSaasClient
 
 
 class MediaApi:

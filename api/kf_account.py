@@ -3,7 +3,7 @@
 
 from typing import TYPE_CHECKING, List
 
-from wxkf_api.models.kf_account import (
+from wxkf_saas.models.kf_account import (
     AddKfAccountRequest,
     AddKfAccountResponse,
     UpdateKfAccountRequest,
@@ -18,7 +18,7 @@ from wxkf_api.models.kf_account import (
 )
 
 if TYPE_CHECKING:
-    from wxkf_api.core.client import WxKfSaasClient
+    from wxkf_saas.core.client import WxKfSaasClient
 
 
 class KfAccountApi:

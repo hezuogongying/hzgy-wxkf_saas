@@ -6,10 +6,10 @@ from typing import Type, TypeVar, Optional, Dict, Any
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from wxkf_api.core.config import WxKfSaasConfig
-from wxkf_api.core.token_manager import MultiTenantTokenManager, TokenType
-from wxkf_api.core.exceptions import WxKfApiError
-from wxkf_api.models.base import ErrorResponse
+from wxkf_saas.core.config import WxKfSaasConfig
+from wxkf_saas.core.token_manager import MultiTenantTokenManager, TokenType
+from wxkf_saas.core.exceptions import WxKfApiError
+from wxkf_saas.models.base import ErrorResponse
 
 # 定义泛型类型变量
 T = TypeVar("T", bound=BaseModel)

@@ -3,7 +3,7 @@
 
 from typing import TYPE_CHECKING, Optional
 
-from wxkf_api.models.message import (
+from wxkf_saas.models.message import (
     SendTextMessageRequest,
     SendImageMessageRequest,
     SendVoiceMessageRequest,
@@ -24,7 +24,7 @@ from wxkf_api.models.message import (
 )
 
 if TYPE_CHECKING:
-    from wxkf_api.core.client import WxKfSaasClient
+    from wxkf_saas.core.client import WxKfSaasClient
 
 
 class MessageApi:

@@ -7,14 +7,14 @@ from typing import Optional, Dict
 from sqlalchemy.orm import Session
 import httpx
 
-from wxkf_api.core.config import WxKfSaasConfig
-from wxkf_api.core.exceptions import (
+from wxkf_saas.core.config import WxKfSaasConfig
+from wxkf_saas.core.exceptions import (
     WxKfApiError,
     TenantNotFoundError,
     TenantNotAuthorizedError,
     TokenExpiredError
 )
-from wxkf_api.models.tenant import Tenant, TenantToken
+from wxkf_saas.models.tenant import Tenant, TenantToken
 
 
 class TokenType:

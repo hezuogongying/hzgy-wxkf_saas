@@ -1,4 +1,4 @@
-# 微信客服SaaS服务 (wxkf_api)
+# 微信客服SaaS服务 (wxkf_saas)
 
 基于微信客服API的多租户SaaS服务平台，支持为多个企业提供微信生态的客服消息服务。
 
@@ -24,7 +24,7 @@
 ## 架构设计
 
 ```
-wxkf_api/
+wxkf_saas/
 ├── core/                  # 核心模块
 │   ├── config.py         # 配置管理
 │   ├── database.py       # 数据库管理
@@ -52,7 +52,7 @@ wxkf_api/
 ### 1. 安装依赖
 
 ```bash
-cd wxkf_api
+cd wxkf_saas
 pip install -r requirements.txt
 ```
 
@@ -127,10 +127,10 @@ curl "http://localhost:8083/api/tenants/wx1234567890"
 
 #### 添加客服账号
 ```python
-from wxkf_api.core.config import WxKfSaasConfig
-from wxkf_api.core.database import get_db_manager
-from wxkf_api.core.client import WxKfSaasClient
-from wxkf_api.api.kf_account import KfAccountApi
+from wxkf_saas.core.config import WxKfSaasConfig
+from wxkf_saas.core.database import get_db_manager
+from wxkf_saas.core.client import WxKfSaasClient
+from wxkf_saas.api.kf_account import KfAccountApi
 
 # 初始化配置
 config = WxKfSaasConfig()
@@ -158,7 +158,7 @@ print(f"客服账号ID: {response.open_kfid}")
 
 #### 发送文本消息
 ```python
-from wxkf_api.api.message import MessageApi
+from wxkf_saas.api.message import MessageApi
 
 # 创建消息API实例
 msg_api = MessageApi(client)
@@ -198,7 +198,7 @@ for msg in response.msg_list:
 
 #### 上传图片
 ```python
-from wxkf_api.api.media import MediaApi
+from wxkf_saas.api.media import MediaApi
 
 # 创建素材API实例
 media_api = MediaApi(client)

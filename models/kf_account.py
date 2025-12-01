@@ -3,7 +3,7 @@
 
 from typing import Optional, List
 from pydantic import Field
-from wxkf_api.models.base import WxKfBaseModel, SuccessResponse
+from wxkf_saas.models.base import WxKfBaseModel, SuccessResponse
 
 
 # ===== 请求模型 =====

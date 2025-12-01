@@ -1,8 +1,8 @@
-# wxkf_api 项目总览
+# wxkf_saas 项目总览
 
 ## 项目概述
 
-**wxkf_api** 是一个基于微信客服API开发的**多租户SaaS服务平台**，旨在为多个企业提供微信生态的客服消息服务。
+**wxkf_saas** 是一个基于微信客服API开发的**多租户SaaS服务平台**，旨在为多个企业提供微信生态的客服消息服务。
 
 本项目完全独立于 `wx_kf`，采用全新的架构设计，专注于**SaaS模式**和**多租户管理**。
 
@@ -43,7 +43,7 @@
 ## 项目结构
 
 ```
-wxkf_api/
+wxkf_saas/
 │
 ├── core/                      # 核心模块
 │   ├── config.py             # 配置管理 (支持多租户配置)
@@ -182,8 +182,8 @@ curl -X POST "http://localhost:8083/api/tenants/" \
 
 ### 5. 使用API
 ```python
-from wxkf_api.core.client import WxKfSaasClient
-from wxkf_api.api.message import MessageApi
+from wxkf_saas.core.client import WxKfSaasClient
+from wxkf_saas.api.message import MessageApi
 
 # 创建客户端
 client = WxKfSaasClient(config, db)
@@ -200,7 +200,7 @@ msg_api.send_text(
 
 ## 与 wx_kf 的区别
 
-| 特性 | wx_kf | wxkf_api |
+| 特性 | wx_kf | wxkf_saas |
 |------|-------|----------|
 | **定位** | 单租户SDK | 多租户SaaS服务 |
 | **架构** | 库/模块 | 完整服务 |
@@ -331,6 +331,6 @@ MIT License
 
 ---
 
-**开发团队**: wxkf_api Team
+**开发团队**: wxkf_saas Team
 **版本**: 1.0.0
 **最后更新**: 2025-12-01

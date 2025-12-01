@@ -6,8 +6,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import QueuePool
 
-from wxkf_api.core.config import WxKfSaasConfig
-from wxkf_api.models.tenant import Base
+from wxkf_saas.core.config import WxKfSaasConfig
+from wxkf_saas.models.tenant import Base
 
 
 class DatabaseManager:
