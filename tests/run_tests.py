@@ -12,10 +12,12 @@ project_root = Path(__file__).parent.parent
 # 切换到项目根目录
 os.chdir(project_root)
 
-# 使用test_scripts目录下可工作的测试文件
+# 使用目前可以正常工作的测试文件
 test_files = [
     "test_scripts/test_config_simple.py",
-    "test_scripts/test_app_startup.py"
+    "test_scripts/test_app_startup.py",
+    "tests/test_config.py",
+    "tests/test_database.py"
 ]
 
 def run_tests():

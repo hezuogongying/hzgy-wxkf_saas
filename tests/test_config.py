@@ -107,7 +107,7 @@ def test_config_properties():
         DB_NAME="test_db",
         DB_USER="test_user",
         DB_PASSWORD="test_pass",
-        DB_POOL_SIZE=5
+        DB_POOL_SIZE=5,
         DB_MAX_OVERFLOW=10
     )
 

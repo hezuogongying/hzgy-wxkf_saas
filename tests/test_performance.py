@@ -20,8 +20,7 @@ async def test_database_performance(test_database):
 
         tenants = [
             Tenant(corp_id=f"perf_corp_{str(i).zfill(4)}", corp_name=f"性能测试企业{i}")
-                 for i in range(1000))
-        ]
+                 for i in range(1000)]
 
         session.add_all(tenants)
         await session.commit()

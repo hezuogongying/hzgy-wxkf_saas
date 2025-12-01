@@ -38,7 +38,7 @@ async def test_database_session_creation(test_database):
         assert session.is_active
 
 
-def test_database_transaction(test_database):
+async def test_database_transaction(test_database):
     """测试数据库事务"""
     from wxkf_saas.models.tenant import Tenant
 

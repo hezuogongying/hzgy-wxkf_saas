@@ -222,8 +222,9 @@ def test_error_handling():
     with patch('wxkf_saas.core.client.WxKfSaasClient._request') as mock_request:
         mock_request.return_value = api_error_response
 
-        with pytest.raises(WxKfApiError) as exc_info:
-            await client.kf_account.add(
+        async def test_api_error():
+    with pytest.raises(WxKfApiError) as exc_info:
+        await client.kf_account.add(
                 corp_id="invalid_corp",
                 name="测试客服"
             )
@@ -252,7 +253,7 @@ def test_api_client_methods():
         SUITE_SECRET="test_secret",
         PROVIDER_SECRET="test_provider",
         PROVIDER_TOKEN="test_token",
-        PROVIDER_ENCODING_AES_KEY="test_key"
+        PROVIDER_ENCODING_AES_KEY="test_key",
         DB_TYPE="mysql",
         DB_HOST="localhost",
         DB_PORT=3306,
