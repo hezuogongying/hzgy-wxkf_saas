@@ -8,21 +8,21 @@ from datetime import datetime
 
 
 @pytest.mark.unit
-def test_client_initialization(test_config):
+def test_client_initialization(test_config, mock_db_session):
     """测试客户端初始化"""
     from wxkf_saas.core.client import WxKfSaasClient
 
-    client = WxKfSaasClient(test_config)
+    client = WxKfSaasClient(test_config, mock_db_session)
     assert client.config == test_config
     assert client._http_client is not None
 
 
 @pytest.mark.unit
-def test_client_url_building(test_config):
+def test_client_url_building(test_config, mock_db_session):
     """测试客户端URL构建"""
     from wxkf_saas.core.client import WxKfSaasClient
 
-    client = WxKfSaasClient(test_config)
+    client = WxKfSaasClient(test_config, mock_db_session)
 
     # 测试基础URL
     base_url = client._build_url("/test")
@@ -31,11 +31,11 @@ def test_client_url_building(test_config):
 
 @pytest.mark.asyncio
 @pytest.mark.unit
-async def test_client_request_with_provider_token(test_config):
+async def test_client_request_with_provider_token(test_config, mock_db_session):
     """测试使用provider_token的请求"""
     from wxkf_saas.core.client import WxKfSaasClient
 
-    client = WxKfSaasClient(test_config)
+    client = WxKfSaasClient(test_config, mock_db_session)
 
     # Mock HTTP客户端
     mock_response = MagicMock()
@@ -61,11 +61,11 @@ async def test_client_request_with_provider_token(test_config):
 
 @pytest.mark.asyncio
 @pytest.mark.unit
-async def test_client_request_with_corp_id(test_config):
+async def test_client_request_with_corp_id(test_config, mock_db_session):
     """测试使用corp_id的请求"""
     from wxkf_saas.core.client import WxKfSaasClient
 
-    client = WxKfSaasClient(test_config)
+    client = WxKfSaasClient(test_config, mock_db_session)
 
     # Mock HTTP客户端
     mock_response = MagicMock()
@@ -99,12 +99,12 @@ async def test_client_request_with_corp_id(test_config):
 
 @pytest.mark.asyncio
 @pytest.mark.unit
-async def test_client_request_error_handling(test_config):
+async def test_client_request_error_handling(test_config, mock_db_session):
     """测试客户端请求错误处理"""
     from wxkf_saas.core.client import WxKfSaasClient
     from wxkf_saas.core.exceptions import WxKfApiError
 
-    client = WxKfSaasClient(test_config)
+    client = WxKfSaasClient(test_config, mock_db_session)
 
     # Mock HTTP客户端 - API错误
     mock_response = MagicMock()
@@ -131,11 +131,11 @@ async def test_client_request_error_handling(test_config):
 
 @pytest.mark.asyncio
 @pytest.mark.unit
-async def test_client_file_upload(test_config):
+async def test_client_file_upload(test_config, mock_db_session):
     """测试文件上传"""
     from wxkf_saas.core.client import WxKfSaasClient
 
-    client = WxKfSaasClient(test_config)
+    client = WxKfSaasClient(test_config, mock_db_session)
 
     # Mock HTTP客户端
     mock_response = MagicMock()

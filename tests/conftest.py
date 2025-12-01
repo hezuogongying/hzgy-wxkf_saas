@@ -112,6 +112,14 @@ async def mock_client(test_config):
     return client
 
 
+@pytest.fixture(scope="function")
+def mock_db_session():
+    """模拟数据库会话"""
+    from unittest.mock import MagicMock
+    session = MagicMock()
+    return session
+
+
 @pytest.fixture(scope="session")
 def mock_redis():
     """模拟Redis客户端"""

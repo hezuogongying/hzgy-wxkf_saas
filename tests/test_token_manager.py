@@ -8,11 +8,11 @@ from datetime import datetime, timedelta
 
 
 @pytest.mark.unit
-def test_token_manager_initialization(test_config):
+def test_token_manager_initialization(test_config, mock_db_session):
     """测试Token管理器初始化"""
     from wxkf_saas.core.token_manager import MultiTenantTokenManager
 
-    manager = MultiTenantTokenManager(test_config)
+    manager = MultiTenantTokenManager(test_config, mock_db_session)
     assert manager.config == test_config
 
 
@@ -186,7 +186,7 @@ async def test_token_auto_refresh(test_database):
 
 @pytest.mark.asyncio
 @pytest.mark.unit
-async def test_redis_token_caching():
+async def test_redis_token_caching(mock_db_session):
     """测试Redis token缓存"""
     from wxkf_saas.core.token_manager import MultiTenantTokenManager
 
@@ -201,7 +201,7 @@ async def test_redis_token_caching():
     mock_redis.get.return_value = None
     mock_redis.setex.return_value = True
 
-    manager = MultiTenantTokenManager(config)
+    manager = MultiTenantTokenManager(config, mock_db_session)
     manager._redis_client = mock_redis
 
     # 测试缓存未命中
