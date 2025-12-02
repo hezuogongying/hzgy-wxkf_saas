@@ -1,0 +1,545 @@
+name: 宝塔面板自动部署
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    types: [closed, merged]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: '部署环境'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      deploy_message:
+        description: '部署说明'
+        required: false
+        type: string
+
+jobs:
+  # 1. 代码质量检查
+  quality-check:
+    runs-on: ubuntu-latest
+    outputs:
+      should-deploy: ${{ steps.changes.outputs.should-deploy }}
+      deploy-branch: ${{ steps.branch.outputs.branch }}
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 检查变更内容
+        id: changes
+        run: |
+          # 检查是否只有特定文件变更才需要部署
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "should-deploy=false" >> $GITHUB_OUTPUT
+          else
+            # 检查关键文件是否有变更
+            git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E "(api/|core/|models/|routes/|main\.py|requirements\.txt)" > /dev/null && echo "should-deploy=true" >> $GITHUB_OUTPUT || echo "should-deploy=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 获取分支信息
+        id: branch
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "branch=main" >> $GITHUB_OUTPUT
+          else
+            echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 设置Python环境
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: 缓存依赖
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-asyncio pytest-cov black flake8
+          pip install -r requirements.txt
+
+      - name: 代码风格检查
+        run: |
+          black --check .
+          flake8 . --max-line-length=88 --extend-ignore=E203
+
+      - name: 运行测试
+        run: |
+          pytest tests/ -m "unit and not database" --cov=wxkf_saas --cov-report=xml --tb=short
+
+      - name: 上传覆盖率报告
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+
+  # 2. 构建部署包
+  build-deploy-package:
+    runs-on: ubuntu-latest
+    needs: quality-check
+    if: needs.quality-check.outputs.should-deploy == 'true'
+    outputs:
+      package-url: ${{ steps.upload.outputs.download-url }}
+      package-version: ${{ steps.meta.outputs.version }}
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置Python环境
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: 安装构建依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install build wheel
+
+      - name: 获取版本信息
+        id: meta
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=$(date +'%Y%m%d-%H%M%S')-${{ github.sha:0:7 }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 创建部署包
+        run: |
+          # 创建部署目录
+          mkdir -p deploy-package
+
+          # 复制核心文件
+          cp -r api core models routes main.py requirements.txt deploy-package/
+
+          # 排除不必要的文件
+          find deploy-package/ -name "*.pyc" -delete
+          find deploy-package/ -name "__pycache__" -type d -exec rm -rf {} +
+          rm -rf deploy-package/tests/
+
+          # 创建启动脚本
+          cat > deploy-package/deploy.sh << 'EOF'
+          #!/bin/bash
+          set -e
+
+          echo "🚀 开始部署微信客服SaaS服务..."
+          echo "📦 版本: ${{ steps.meta.outputs.version }}"
+          echo "🌐 环境: \${BAOTA_ENV:-production}"
+          echo "📅 时间: $(date +'%Y-%m-%d %H:%M:%S')"
+
+          # 设置环境变量
+          BTPATH="/www/server/python/wxkf_saas"
+          BACKUP_PATH="/www/server/backup/wxkf_saas"
+          LOG_PATH="/www/wwwlogs/wxkf_saas"
+
+          # 创建备份目录
+          sudo mkdir -p \$BACKUP_PATH/\$(date +%Y%m%d-%H%M%S)
+
+          # 备份当前版本
+          if [ -d "\$BTPATH" ]; then
+            echo "📦 备份当前版本..."
+            sudo cp -r \$BTPATH \$BACKUP_PATH/\$(date +%Y%m%d-%H%M%S)/current/
+            echo "✅ 备份完成"
+          fi
+
+          # 创建虚拟环境
+          echo "🐍 创建/更新虚拟环境..."
+          cd /www/server/python/
+          if [ ! -d "wxkf_saas_venv" ]; then
+            python3 -m venv wxkf_saas_venv
+          fi
+
+          # 激活虚拟环境并安装依赖
+          source wxkf_saas_venv/bin/activate
+          echo "📦 安装依赖..."
+          pip install --upgrade pip
+          pip install -r wxkf_saas/requirements.txt
+          echo "✅ 依赖安装完成"
+
+          # 停止当前服务
+          echo "⏹️ 停止当前服务..."
+          sudo systemctl stop wxkf_saas 2>/dev/null || echo "服务未运行或停止失败"
+
+          # 部署新版本
+          echo "📦 部署新版本..."
+          sudo rm -rf wxkf_saas
+          sudo cp -r /tmp/deploy-package/* wxkf_saas
+          sudo chown -R www:www wxkf_saas
+
+          # 配置环境变量
+          echo "⚙️ 配置环境变量..."
+          sudo mkdir -p \$BTPATH/config
+
+          # 生产环境配置
+          if [ "\${BAOTA_ENV}" = "production" ]; then
+            sudo tee \$BTPATH/config/.env.production > /dev/null << 'PROD'
+          # 生产环境配置 - 请在服务器上手动配置以下内容
+          # SERVER_URL=https://wxkf.shoudu888.com
+          # FASTAPI_HOST=0.0.0.0
+          # FASTAPI_PORT=8083
+          # DB_HOST=localhost
+          # DB_PORT=3306
+          # DB_NAME=wxkf_saas
+          # DB_USER=wxkf_saas
+          # DB_PASSWORD=your_production_db_password
+          # REDIS_HOST=localhost
+          # REDIS_PORT=6379
+          # REDIS_PASSWORD=your_production_redis_password
+          # SUITE_ID=your_suite_id
+          # SUITE_SECRET=your_suite_secret
+          # PROVIDER_SECRET=your_provider_secret
+          # PROVIDER_TOKEN=your_provider_token
+          # PROVIDER_ENCODING_AES_KEY=your_provider_encoding_aes_key
+          PROD
+          EOF
+          else
+            # 测试环境配置
+            sudo tee \$BTPATH/config/.env.staging > /dev/null << 'STAGING'
+          # 测试环境配置
+          ENVIRONMENT=staging
+          SERVER_URL=https://staging.wxkf.shoudu888.com
+          FASTAPI_HOST=0.0.0.0
+          FASTAPI_PORT=8083
+          DB_HOST=localhost
+          DB_PORT=3306
+          DB_NAME=wxkf_saas_staging
+          DB_USER=wxkf_saas_staging
+          DB_PASSWORD=your_staging_db_password
+          REDIS_HOST=localhost
+          REDIS_PORT=6379
+          REDIS_PASSWORD=your_staging_redis_password
+          SUITE_ID=your_suite_id
+          SUITE_SECRET=your_suite_secret
+          PROVIDER_SECRET=your_provider_secret
+          PROVIDER_TOKEN=your_provider_token
+          PROVIDER_ENCODING_AES_KEY=your_provider_encoding_aes_key
+          STAGING
+          EOF
+          fi
+
+          # 复制环境配置
+          if [ "\${BAOTA_ENV}" = "production" ]; then
+            sudo cp \$BTPATH/config/.env.production \$BTPATH/.env
+          else
+            sudo cp \$BTPATH/config/.env.staging \$BTPATH/.env
+          fi
+
+          # 设置权限
+          sudo chown -R www:www \$BTPATH
+          sudo chmod -R 755 \$BTPATH
+          sudo chmod 600 \$BTPATH/.env
+
+          echo "✅ 部署完成"
+
+          # 创建systemd服务文件
+          echo "⚙️ 创建系统服务..."
+          sudo tee /etc/systemd/system/wxkf_saas.service > /dev/null << 'SERVICE'
+          [Unit]
+          Description=微信客服SaaS服务
+          After=network.target
+
+          [Service]
+          Type=exec
+          User=www
+          Group=www
+          WorkingDirectory=\$BTPATH
+          Environment=PATH=/www/server/python/wxkf_saas_venv/bin
+          ExecStart=/www/server/python/wxkf_saas_venv/bin/gunicorn main:app -c gunicorn.conf.py
+          ExecReload=/bin/kill -s HUP \$MAINPID
+          Restart=always
+          RestartSec=10
+
+          [Install]
+          WantedBy=multi-user.target
+          SERVICE
+          EOF
+
+          # 创建Gunicorn配置
+          sudo tee \$BTPATH/gunicorn.conf.py > /dev/null << 'GUNICORN'
+          # Gunicorn配置文件
+          bind = "0.0.0.0:8083"
+          workers = 4
+          worker_class = "uvicorn.workers.UvicornWorker"
+          worker_connections = 1000
+          max_requests = 1000
+          max_requests_jitter = 100
+          preload = True
+          timeout = 120
+          keepalive = 2
+          backlog = 2048
+          access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s %(f)s'
+          accesslog = "-\\n"
+          errorlog = "-\\n"
+          loglevel = "info"
+          GUNICORN
+          EOF
+
+          # 重新加载systemd并启动服务
+          echo "🚀 启动服务..."
+          sudo systemctl daemon-reload
+          sudo systemctl enable wxkf_saas
+          sudo systemctl start wxkf_saas
+
+          # 等待服务启动
+          echo "⏳ 等待服务启动..."
+          sleep 10
+
+          # 健康检查
+          echo "🏥 执行健康检查..."
+          for i in {1..30}; do
+            if curl -f http://localhost:8083/health >/dev/null 2>&1; then
+              echo "✅ 服务启动成功 (尝试 \$i/30)"
+              break
+            else
+              echo "⏳ 等待服务启动... \$i/30"
+              sleep 2
+            fi
+
+            if [ \$i -eq 30 ]; then
+              echo "❌ 服务启动失败，查看日志..."
+              sudo journalctl -u wxkf_saas --no-pager -n 20
+              exit 1
+            fi
+          done
+
+          # 配置Nginx（如果需要）
+          echo "🌐 配置Nginx..."
+          sudo tee /etc/nginx/conf.d/wxkf_saas.conf > /dev/null << 'NGINX'
+          server {
+              listen 80;
+              server_name wxkf.shoudu888.com;
+              return 301 https://\$server_name\$request_uri;
+          }
+
+          server {
+              listen 443 ssl http2;
+              server_name wxkf.shoudu888.com;
+
+              ssl_certificate /etc/letsencrypt/live/wxkf.shoudu888.com/fullchain.pem;
+              ssl_certificate_key /etc/letsencrypt/live/wxkf.shoudu888.com/privkey.pem;
+
+              client_max_body_size 50M;
+
+              location / {
+                  proxy_pass http://127.0.0.1:8083;
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto \$scheme;
+                  proxy_read_timeout 300s;
+                  proxy_connect_timeout 75s;
+                  proxy_send_timeout 300s;
+              }
+          }
+          NGINX
+
+          # 测试Nginx配置
+          sudo nginx -t && sudo systemctl reload nginx || echo "⚠️ Nginx配置需要检查"
+
+          echo "🎉 部署完成！"
+          echo "🌐 生产地址: https://wxkf.shoudu888.com"
+          echo "📊 健康检查: https://wxkf.shoudu888.com/health"
+          echo "📋 服务状态: sudo systemctl status wxkf_saas"
+          echo "📝 查看日志: sudo journalctl -u wxkf_saas -f"
+          EOF
+
+          chmod +x deploy-package/deploy.sh
+
+      - name: 创建部署包
+        run: |
+          cd deploy-package
+          tar -czf ../wxkf_saas-deploy-${{ steps.meta.outputs.version }}.tar.gz .
+          cd ..
+
+      - name: 上传部署包
+        id: upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: wxkf_saas-deploy-${{ steps.meta.outputs.version }}
+          path: wxkf_saas-deploy-${{ steps.meta.outputs.version }}.tar.gz
+          retention-days: 30
+
+  # 3. 宝塔面板部署
+  deploy-to-baota:
+    runs-on: ubuntu-latest
+    needs: build-deploy-package
+    if: needs.quality-check.outputs.should-deploy == 'true'
+    environment: ${{ github.event.inputs.environment || 'production' }}
+
+    steps:
+      - name: 下载部署包
+        run: |
+          wget -O wxkf_saas-deploy.tar.gz \
+            "${{ needs.build-deploy-package.outputs.package-url }}"
+
+      - name: 解压部署包
+        run: |
+          tar -xzf wxkf_saas-deploy.tar.gz
+          ls -la
+
+      - name: 准备远程部署
+        run: |
+          echo "🚀 准备部署到宝塔面板..."
+          echo "📦 版本: ${{ needs.build-deploy-package.outputs.package-version }}"
+          echo "🌐 环境: ${{ github.event.inputs.environment || 'production' }}"
+          echo "🖥️ 服务器: 152.136.33.200:3281"
+
+      - name: 执行远程部署
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.BAOTA_HOST }}
+          username: ${{ secrets.BAOTA_USERNAME }}
+          key: ${{ secrets.BAOTA_SSH_KEY }}
+          port: ${{ secrets.BAOTA_PORT || 22 }}
+          timeout: 300s
+          script: |
+            # 设置环境变量
+            export BAOTA_ENV="${{ github.event.inputs.environment || 'production' }}"
+
+            # 创建临时部署目录
+            mkdir -p /tmp/deploy-package
+            cd /tmp/deploy-package
+
+            # 从GitHub下载部署包
+            echo "📥 下载部署包..."
+            wget -O deploy-package.tar.gz \
+              "${{ needs.build-deploy-package.outputs.package-url }}"
+
+            # 解压部署包
+            echo "📦 解压部署包..."
+            tar -xzf deploy-package.tar.gz
+            ls -la
+
+            # 执行部署脚本
+            echo "🚀 执行部署..."
+            chmod +x deploy.sh
+            sudo ./deploy.sh
+
+            # 清理临时文件
+            cd /
+            rm -rf /tmp/deploy-package
+
+            echo "🎉 部署完成！"
+
+      - name: 部署后验证
+        run: |
+          echo "🔍 执行部署后验证..."
+          sleep 30  # 等待服务启动
+
+          # 健康检查
+          if [ "${{ github.event.inputs.environment || 'production' }}" = "production" ]; then
+            URL="https://wxkf.shoudu888.com/health"
+          else
+            URL="http://staging.wxkf.shoudu888.com/health"
+          fi
+
+          echo "🏥 健康检查: $URL"
+
+          for i in {1..10}; do
+            if curl -f -s "$URL" >/dev/null 2>&1; then
+              echo "✅ 健康检查通过 (尝试 $i/10)"
+              HEALTH_STATUS="success"
+              break
+            else
+              echo "⏳ 等待服务就绪... $i/10"
+              sleep 10
+            fi
+
+            if [ $i -eq 10 ]; then
+              echo "❌ 健康检查失败"
+              HEALTH_STATUS="failed"
+              exit 1
+            fi
+          done
+
+          echo "🎯 部署状态: $HEALTH_STATUS"
+
+      - name: 发送部署通知
+        if: always()
+          uses: 8398a7/action-slack@v3
+          with:
+            status: ${{ job.status }}
+            channel: '#deployments'
+            text: |
+              🚀 **微信客服SaaS部署完成**
+              • 环境: ${{ github.event.inputs.environment || 'production' }}
+              • 版本: ${{ needs.build-deploy-package.outputs.package-version }}
+              • 分支: ${{ needs.quality-check.outputs.deploy-branch }}
+              • 提交: ${{ github.sha }}
+              • 状态: ${{ env.HEALTH_STATUS || 'unknown' }}
+              • 地址: https://wxkf.shoudu888.com
+          env:
+            SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+            HEALTH_STATUS: ${{ env.HEALTH_STATUS }}
+
+  # 4. 部署后监控
+  post-deploy-monitoring:
+    runs-on: ubuntu-latest
+    needs: deploy-to-baota
+    if: success() && (github.event.inputs.environment || 'production') == 'production'
+
+    steps:
+      - name: 监控部署状态
+        run: |
+          echo "📊 开始部署后监控..."
+
+          # 监控30分钟
+          for i in {1..180}; do
+            if [ $((i % 30)) -eq 0 ]; then
+              echo "🏥 执行健康检查 ($i/180)..."
+              response=$(curl -s -o /dev/null -w "%{http_code}" https://wxkf.shoudu888.com/health)
+
+              if [ "$response" != "200" ]; then
+                echo "❌ 健康检查失败: HTTP $response"
+                exit 1
+              fi
+
+              echo "✅ 健康检查通过: HTTP $response"
+            fi
+
+            sleep 60
+          done
+
+          echo "🎉 监控完成，服务稳定运行"
+
+      - name: 性能测试
+        run: |
+          echo "⚡ 执行性能测试..."
+
+          # 简单的性能测试
+          for i in {1..5}; do
+            response_time=$(curl -o /dev/null -s -w "%{time_total}" https://wxkf.shoudu888.com/health)
+            echo "响应时间 $i: ${response_time}s"
+            sleep 2
+          done
+
+      - name: 发送监控报告
+        if: always()
+          uses: 8398a7/action-slack@v3
+          with:
+            status: ${{ job.status }}
+            channel: '#monitoring'
+            text: |
+              📊 **部署后监控完成**
+              • 环境: production
+              • 服务: 微信客服SaaS
+              • 状态: 稳定运行
+              • 地址: https://wxkf.shoudu888.com/health
+          env:
+            SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
