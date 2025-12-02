@@ -1,0 +1,116 @@
+name: 自动部署到云端(bwx_dev)
+
+# 当推送到 bwx_dev 分支时自动触发
+on:
+  push:
+    branches:
+      - bwx_dev
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'dev_tmp/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: 部署到云端服务器
+
+    steps:
+      - name: 📋 部署信息
+        run: |
+          echo "========================================="
+          echo "🚀 开始自动部署"
+          echo "📦 分支: bwx_dev"
+          echo "🔗 提交: ${{ github.sha }}"
+          echo "👤 作者: ${{ github.actor }}"
+          echo "💬 消息: ${{ github.event.head_commit.message }}"
+          echo "========================================="
+
+      - name: 🚀 SSH 部署到云端
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          script: |
+            set -e
+
+            echo "========================================="
+            echo "🚀 开始部署 wxkf_saas 项目"
+            echo "⏰ 时间: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "========================================="
+
+            # 1. 进入项目目录
+            cd /www/wwwroot/python_project/wxkf_saas
+
+            # 2. 拉取最新代码
+            echo "📥 正在拉取最新代码..."
+            git pull origin bwx_dev
+
+            if [ $? -eq 0 ]; then
+              echo "✅ 代码拉取成功"
+            else
+              echo "❌ 代码拉取失败"
+              exit 1
+            fi
+
+            # 3. 检查依赖是否需要更新
+            if git diff HEAD@{1} HEAD --name-only 2>/dev/null | grep -q "requirements.txt"; then
+              echo "📦 检测到依赖变化，正在更新..."
+              pip3 install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+              echo "✅ 依赖更新完成"
+            else
+              echo "⏭️  依赖无变化，跳过安装"
+            fi
+
+            # 4. 重启服务
+            echo "🔄 正在重启服务..."
+            if [ -f "gunicorn.pid" ]; then
+              PID=$(cat gunicorn.pid)
+
+              if ps -p $PID > /dev/null 2>&1; then
+                # 平滑重启（推荐）
+                kill -HUP $PID
+                sleep 3
+
+                # 验证进程是否还在运行
+                if ps -p $PID > /dev/null 2>&1; then
+                  echo "✅ 服务平滑重启成功 (PID: $PID)"
+                else
+                  echo "⚠️  进程已停止，正在重新启动..."
+                  gunicorn -c gunicorn_conf.py main:app --daemon
+                  echo "✅ 服务已重新启动"
+                fi
+              else
+                echo "⚠️  进程不存在，正在启动服务..."
+                gunicorn -c gunicorn_conf.py main:app --daemon
+                echo "✅ 服务已启动"
+              fi
+            else
+              echo "⚠️  PID文件不存在，正在启动服务..."
+              gunicorn -c gunicorn_conf.py main:app --daemon
+              echo "✅ 服务已启动"
+            fi
+
+            # 5. 健康检查
+            echo "🏥 执行健康检查..."
+            sleep 3
+
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8083/health 2>/dev/null || echo "000")
+
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ 健康检查通过 (HTTP $HTTP_CODE)"
+            else
+              echo "❌ 健康检查失败 (HTTP $HTTP_CODE)"
+              echo "📋 查看进程状态:"
+              ps aux | grep gunicorn | head -5
+              echo "📋 查看最近日志:"
+              tail -20 *.log 2>/dev/null || echo "无日志文件"
+              exit 1
+            fi
+
+            echo "========================================="
+            echo "🎉 部署完成！"
+            echo "⏰ 时间: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "========================================="
