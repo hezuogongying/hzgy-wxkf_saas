@@ -1,0 +1,984 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="14" failures="39" skipped="0" tests="79" time="5.947" timestamp="2025-12-02T07:43:21.375814+08:00" hostname="Maverick"><testcase classname="test_api" name="test_client_initialization" time="0.038"><failure message="TypeError: WxKfSaasClient.__init__() missing 1 required positional argument: 'db_session'">test_config = WxKfSaasConfig(suite_id='你的服务商套件ID', suite_secret='你的服务商套件Secret', provider_secret='你的服务商Secret', provider_token='你在服务...er_encoding_aes_key', REDIS_HOST='localhost', REDIS_PORT=6379, REDIS_DB=1, REDIS_KEY_PREFIX='test:', LOG_LEVEL='DEBUG')
+
+    def test_client_initialization(test_config):
+        """测试客户端初始化"""
+        from wxkf_saas.core.client import WxKfSaasClient
+        from wxkf_saas.api.kf_account import KfAccountApi
+        from wxkf_saas.api.message import MessageApi
+        from wxkf_saas.api.media import MediaApi
+    
+&gt;       client = WxKfSaasClient(test_config)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: WxKfSaasClient.__init__() missing 1 required positional argument: 'db_session'
+
+tests\test_api.py:18: TypeError</failure></testcase><testcase classname="test_api" name="test_kf_account_api" time="0.026"><failure message="TypeError: object AsyncMock can't be used in 'await' expression">@pytest.mark.asyncio
+    @pytest.mark.unit
+    async def test_kf_account_api():
+        """测试客服账号API"""
+        from wxkf_saas.api.kf_account import KfAccountApi
+        from wxkf_saas.models.kf_account import KfAccount
+    
+        # 模拟客户端
+        mock_client = AsyncMock()
+        kf_api = KfAccountApi(mock_client)
+    
+        # 测试添加客服账号
+        mock_response = AsyncMock()
+        mock_response.open_kfid = "test_kf_id"
+        mock_response.request_id = "test_request_id"
+    
+        mock_client._request.return_value = mock_response
+    
+        with patch('wxkf_saas.api.kf_account.KfAccountApi.add') as mock_add:
+            mock_add.return_value = mock_response
+    
+&gt;           result = await kf_api.add(
+                corp_id="test_corp",
+                name="测试客服",
+                media_id="test_media"
+            )
+E           TypeError: object AsyncMock can't be used in 'await' expression
+
+tests\test_api.py:47: TypeError</failure></testcase><testcase classname="test_api" name="test_message_api" time="0.005"><failure message="TypeError: object AsyncMock can't be used in 'await' expression">@pytest.mark.asyncio
+    async def test_message_api():
+        """测试消息API"""
+        from wxkf_saas.api.message import MessageApi
+    
+        mock_client = AsyncMock()
+        msg_api = MessageApi(mock_client)
+    
+        # 测试发送文本消息
+        mock_response = AsyncMock()
+        mock_response.msgid = "test_msg_id"
+        mock_response.request_id = "test_msg_request_id"
+    
+        mock_client._request.return_value = mock_response
+    
+        with patch('wxkf_saas.api.message.MessageApi.send_text') as mock_send:
+            mock_send.return_value = mock_response
+    
+&gt;           result = await msg_api.send_text(
+                corp_id="test_corp",
+                touser="test_user",
+                content="测试消息"
+            )
+E           TypeError: object AsyncMock can't be used in 'await' expression
+
+tests\test_api.py:80: TypeError</failure></testcase><testcase classname="test_api" name="test_media_api" time="0.005"><failure message="TypeError: object AsyncMock can't be used in 'await' expression">@pytest.mark.asyncio
+    async def test_media_api():
+        """测试素材API"""
+        from wxkf_saas.api.media import MediaApi
+    
+        mock_client = AsyncMock()
+        media_api = MediaApi(mock_client)
+    
+        # 测试上传图片
+        mock_response = AsyncMock()
+        mock_response.media_id = "test_media_id"
+        mock_response.url = "https://test.com/media.jpg"
+        mock_response.created_at = datetime.now()
+    
+        mock_client._request.return_value = mock_response
+    
+        with patch('wxkf_saas.api.media.MediaApi.upload') as mock_upload:
+            mock_upload.return_value = mock_response
+    
+&gt;           result = await media_api.upload(
+                corp_id="test_corp",
+                media_type="image",
+                file_path="/path/to/test.jpg"
+            )
+E           TypeError: object AsyncMock can't be used in 'await' expression
+
+tests\test_api.py:137: TypeError</failure></testcase><testcase classname="test_api" name="test_api_response_models" time="0.001"><failure message="ImportError: cannot import name 'KfAccountResponse' from 'wxkf_saas.models.kf_account' (D:\project\python\wxkf_saas\models\kf_account.py)">def test_api_response_models():
+        """测试API响应模型"""
+&gt;       from wxkf_saas.models.kf_account import KfAccountResponse
+E       ImportError: cannot import name 'KfAccountResponse' from 'wxkf_saas.models.kf_account' (D:\project\python\wxkf_saas\models\kf_account.py)
+
+tests\test_api.py:177: ImportError</failure></testcase><testcase classname="test_api" name="test_error_handling" time="0.002"><failure message="TypeError: WxKfSaasClient.__init__() missing 1 required positional argument: 'db_session'">test_config = WxKfSaasConfig(suite_id='你的服务商套件ID', suite_secret='你的服务商套件Secret', provider_secret='你的服务商Secret', provider_token='你在服务...er_encoding_aes_key', REDIS_HOST='localhost', REDIS_PORT=6379, REDIS_DB=1, REDIS_KEY_PREFIX='test:', LOG_LEVEL='DEBUG')
+
+    def test_error_handling(test_config):
+        """测试错误处理"""
+        from wxkf_saas.core.exceptions import WxKfApiError, TenantNotFoundError
+        from wxkf_saas.core.client import WxKfSaasClient
+    
+        # 模拟微信API错误
+        api_error_response = {
+            "errcode": 40001,
+            "errmsg": "invalid corp_id"
+        }
+    
+&gt;       client = WxKfSaasClient(test_config)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: WxKfSaasClient.__init__() missing 1 required positional argument: 'db_session'
+
+tests\test_api.py:221: TypeError</failure></testcase><testcase classname="test_api" name="test_api_client_methods" time="0.019"><failure message="TypeError: WxKfSaasClient.__init__() missing 1 required positional argument: 'db_session'">def test_api_client_methods():
+        """测试客户端方法"""
+        from core.client import WxKfSaasClient
+        from core.config import WxKfSaasConfig
+    
+        config = WxKfSaasConfig(
+            SUITE_ID="test_suite",
+            SUITE_SECRET="test_secret",
+            PROVIDER_SECRET="test_provider",
+            PROVIDER_TOKEN="test_token",
+            PROVIDER_ENCODING_AES_KEY="test_key",
+            DB_TYPE="mysql",
+            DB_HOST="localhost",
+            DB_PORT=3306,
+            DB_NAME="test_db",
+            DB_USER="test_user",
+            DB_PASSWORD="test_pass"
+        )
+    
+&gt;       client = WxKfSaasClient(config)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: WxKfSaasClient.__init__() missing 1 required positional argument: 'db_session'
+
+tests\test_api.py:270: TypeError</failure></testcase><testcase classname="test_callback.TestCallbackHandler" name="test_decrypt_message_success" time="0.006" /><testcase classname="test_callback.TestCallbackHandler" name="test_decrypt_message_invalid_signature" time="0.003" /><testcase classname="test_callback.TestCallbackHandler" name="test_process_text_message" time="0.003" /><testcase classname="test_callback.TestCallbackHandler" name="test_process_image_message" time="0.004" /><testcase classname="test_callback.TestCallbackHandler" name="test_process_enter_session_event" time="0.004" /><testcase classname="test_callback.TestCallbackHandler" name="test_process_suite_ticket_event" time="0.003" /><testcase classname="test_callback.TestCallbackHandler" name="test_process_empty_message" time="0.002" /><testcase classname="test_callback.TestCallbackHandler" name="test_process_invalid_xml" time="0.003"><failure message="AssertionError: assert ('XML' in '不支持的消息类型: ' or '解析' in '不支持的消息类型: ')&#10; +  where '不支持的消息类型: ' = CallbackProcessResult(success=False, message='不支持的消息类型: ', msgid=None, event_type=None, process_time=0).message&#10; +  and   '不支持的消息类型: ' = CallbackProcessResult(success=False, message='不支持的消息类型: ', msgid=None, event_type=None, process_time=0).message">self = &lt;wxkf_saas.tests.test_callback.TestCallbackHandler object at 0x000001D1BC885C90&gt;
+callback_handler = &lt;core.callback_handler.CallbackHandler object at 0x000001D1BCB83850&gt;
+
+    @pytest.mark.asyncio
+    async def test_process_invalid_xml(self, callback_handler):
+        """测试处理无效XML消息"""
+        invalid_xml = "&lt;invalid&gt;&lt;xml&gt;"
+    
+        # 加密无效XML
+        encrypted_msg, timestamp, nonce = callback_handler.crypto.encrypt_msg(invalid_xml)
+    
+        # 计算签名
+        signature = callback_handler.crypto.get_sha1(
+            callback_handler.crypto.token, timestamp, nonce, encrypted_msg
+        )
+    
+        # 处理回调消息
+        result = await callback_handler.process_callback_message(
+            encrypted_msg, signature, timestamp, nonce
+        )
+    
+        assert isinstance(result, CallbackProcessResult)
+        assert result.success is False
+&gt;       assert "XML" in result.message or "解析" in result.message
+E       AssertionError: assert ('XML' in '不支持的消息类型: ' or '解析' in '不支持的消息类型: ')
+E        +  where '不支持的消息类型: ' = CallbackProcessResult(success=False, message='不支持的消息类型: ', msgid=None, event_type=None, process_time=0).message
+E        +  and   '不支持的消息类型: ' = CallbackProcessResult(success=False, message='不支持的消息类型: ', msgid=None, event_type=None, process_time=0).message
+
+tests\test_callback.py:228: AssertionError</failure></testcase><testcase classname="test_callback.TestCallbackHandler" name="test_safe_int_conversion" time="0.001" /><testcase classname="test_callback.TestCallbackHandler" name="test_parse_wechat_channels" time="0.001" /><testcase classname="test_callback.TestCallbackHandler" name="test_save_message_to_db_mock" time="0.002" /><testcase classname="test_callback.TestCallbackHandler" name="test_save_event_to_db_mock" time="0.002" /><testcase classname="test_callback.TestCallbackCrypto" name="test_encrypt_decrypt_roundtrip" time="0.002" /><testcase classname="test_callback.TestCallbackCrypto" name="test_signature_verification" time="0.002" /><testcase classname="test_callback.TestCallbackCrypto" name="test_xml_to_dict_conversion" time="0.001" /><testcase classname="test_callback.TestCallbackCrypto" name="test_dict_to_xml_conversion" time="0.001" /><testcase classname="test_callback.TestCallbackCrypto" name="test_extract_xml_field" time="0.001" /><testcase classname="test_callback.TestCallbackCrypto" name="test_invalid_xml_handling" time="0.001" /><testcase classname="test_client" name="test_client_initialization" time="0.445" /><testcase classname="test_client" name="test_client_url_building" time="0.443"><failure message="AttributeError: 'WxKfSaasClient' object has no attribute '_build_url'">test_config = WxKfSaasConfig(suite_id='你的服务商套件ID', suite_secret='你的服务商套件Secret', provider_secret='你的服务商Secret', provider_token='你在服务...er_encoding_aes_key', REDIS_HOST='localhost', REDIS_PORT=6379, REDIS_DB=1, REDIS_KEY_PREFIX='test:', LOG_LEVEL='DEBUG')
+mock_db_session = &lt;MagicMock id='2000326632016'&gt;
+
+    @pytest.mark.unit
+    def test_client_url_building(test_config, mock_db_session):
+        """测试客户端URL构建"""
+        from wxkf_saas.core.client import WxKfSaasClient
+    
+        client = WxKfSaasClient(test_config, mock_db_session)
+    
+        # 测试基础URL
+&gt;       base_url = client._build_url("/test")
+                   ^^^^^^^^^^^^^^^^^
+E       AttributeError: 'WxKfSaasClient' object has no attribute '_build_url'
+
+tests\test_client.py:28: AttributeError</failure></testcase><testcase classname="test_client" name="test_client_request_with_provider_token" time="0.448"><failure message="TypeError: WxKfSaasClient._request() missing 1 required positional argument: 'response_model'">test_config = WxKfSaasConfig(suite_id='你的服务商套件ID', suite_secret='你的服务商套件Secret', provider_secret='你的服务商Secret', provider_token='你在服务...er_encoding_aes_key', REDIS_HOST='localhost', REDIS_PORT=6379, REDIS_DB=1, REDIS_KEY_PREFIX='test:', LOG_LEVEL='DEBUG')
+mock_db_session = &lt;MagicMock id='2000326115152'&gt;
+
+    @pytest.mark.asyncio
+    @pytest.mark.unit
+    async def test_client_request_with_provider_token(test_config, mock_db_session):
+        """测试使用provider_token的请求"""
+        from wxkf_saas.core.client import WxKfSaasClient
+    
+        client = WxKfSaasClient(test_config, mock_db_session)
+    
+        # Mock HTTP客户端
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"errcode": 0, "errmsg": "ok"}
+    
+        client._http_client = AsyncMock()
+        client._http_client.request.return_value = mock_response
+    
+        # Mock token manager
+        with patch('wxkf_saas.core.token_manager.MultiTenantTokenManager') as mock_token_manager:
+            mock_token_manager.return_value.get_token.return_value = "test_provider_token"
+    
+&gt;           result = await client._request(
+                "POST",
+                "/api/test",
+                use_provider_token=True
+            )
+E           TypeError: WxKfSaasClient._request() missing 1 required positional argument: 'response_model'
+
+tests\test_client.py:52: TypeError</failure></testcase><testcase classname="test_client" name="test_client_request_with_corp_id" time="0.441"><failure message="TypeError: '&lt;' not supported between instances of 'MagicMock' and 'float'">test_config = WxKfSaasConfig(suite_id='你的服务商套件ID', suite_secret='你的服务商套件Secret', provider_secret='你的服务商Secret', provider_token='你在服务...er_encoding_aes_key', REDIS_HOST='localhost', REDIS_PORT=6379, REDIS_DB=1, REDIS_KEY_PREFIX='test:', LOG_LEVEL='DEBUG')
+mock_db_session = &lt;MagicMock id='2000326041744'&gt;
+
+    @pytest.mark.asyncio
+    @pytest.mark.unit
+    async def test_client_request_with_corp_id(test_config, mock_db_session):
+        """测试使用corp_id的请求"""
+        from wxkf_saas.core.client import WxKfSaasClient
+    
+        client = WxKfSaasClient(test_config, mock_db_session)
+    
+        # Mock HTTP客户端
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"errcode": 0, "errmsg": "ok", "data": {"id": "123"}}
+    
+        client._http_client = AsyncMock()
+        client._http_client.request.return_value = mock_response
+    
+        # Mock token manager
+        with patch('wxkf_saas.core.token_manager.MultiTenantTokenManager') as mock_token_manager:
+            mock_token_manager.return_value.get_token.return_value = "test_access_token"
+    
+            from pydantic import BaseModel
+    
+            class TestResponse(BaseModel):
+                errcode: int
+                errmsg: str
+                data: dict = None
+    
+&gt;           result = await client._request(
+                "POST",
+                "/api/test",
+                corp_id="test_corp",
+                response_model=TestResponse
+            )
+
+tests\test_client.py:89: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+core\client.py:95: in _request
+    token = self.token_manager.get_corp_access_token(corp_id)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+core\token_manager.py:83: in get_corp_access_token
+    token = self._get_token_from_db(corp_id, TokenType.ACCESS_TOKEN)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = &lt;core.token_manager.MultiTenantTokenManager object at 0x000001D1BCC3C890&gt;
+corp_id = 'test_corp', token_type = 'access_token'
+
+    def _get_token_from_db(self, corp_id: str, token_type: str) -&gt; Optional[str]:
+        """从数据库获取Token
+    
+        Args:
+            corp_id: 企业ID
+            token_type: Token类型
+    
+        Returns:
+            Optional[str]: Token值,如果不存在或已过期返回None
+        """
+        token_record = (
+            self.db.query(TenantToken)
+            .filter(
+                TenantToken.corp_id == corp_id,
+                TenantToken.token_type == token_type
+            )
+            .first()
+        )
+    
+        if not token_record:
+            return None
+    
+        # 检查是否过期
+&gt;       if token_record.expires_at &lt; time.time():
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: '&lt;' not supported between instances of 'MagicMock' and 'float'
+
+core\token_manager.py:224: TypeError</failure></testcase><testcase classname="test_client" name="test_client_request_error_handling" time="0.452"><failure message="TypeError: WxKfSaasClient._request() missing 1 required positional argument: 'response_model'">test_config = WxKfSaasConfig(suite_id='你的服务商套件ID', suite_secret='你的服务商套件Secret', provider_secret='你的服务商Secret', provider_token='你在服务...er_encoding_aes_key', REDIS_HOST='localhost', REDIS_PORT=6379, REDIS_DB=1, REDIS_KEY_PREFIX='test:', LOG_LEVEL='DEBUG')
+mock_db_session = &lt;MagicMock id='2000326693264'&gt;
+
+    @pytest.mark.asyncio
+    @pytest.mark.unit
+    async def test_client_request_error_handling(test_config, mock_db_session):
+        """测试客户端请求错误处理"""
+        from wxkf_saas.core.client import WxKfSaasClient
+        from wxkf_saas.core.exceptions import WxKfApiError
+    
+        client = WxKfSaasClient(test_config, mock_db_session)
+    
+        # Mock HTTP客户端 - API错误
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"errcode": 40001, "errmsg": "invalid credential"}
+    
+        client._http_client = AsyncMock()
+        client._http_client.request.return_value = mock_response
+    
+        # Mock token manager
+        with patch('wxkf_saas.core.token_manager.MultiTenantTokenManager') as mock_token_manager:
+            mock_token_manager.return_value.get_token.return_value = "invalid_token"
+    
+            with pytest.raises(WxKfApiError) as exc_info:
+&gt;               await client._request(
+                    "POST",
+                    "/api/test",
+                    use_provider_token=True
+                )
+E               TypeError: WxKfSaasClient._request() missing 1 required positional argument: 'response_model'
+
+tests\test_client.py:122: TypeError</failure></testcase><testcase classname="test_client" name="test_client_file_upload" time="0.444"><failure message="AttributeError: 'WxKfSaasClient' object has no attribute '_upload_file'">test_config = WxKfSaasConfig(suite_id='你的服务商套件ID', suite_secret='你的服务商套件Secret', provider_secret='你的服务商Secret', provider_token='你在服务...er_encoding_aes_key', REDIS_HOST='localhost', REDIS_PORT=6379, REDIS_DB=1, REDIS_KEY_PREFIX='test:', LOG_LEVEL='DEBUG')
+mock_db_session = &lt;MagicMock id='2000327030544'&gt;
+
+    @pytest.mark.asyncio
+    @pytest.mark.unit
+    async def test_client_file_upload(test_config, mock_db_session):
+        """测试文件上传"""
+        from wxkf_saas.core.client import WxKfSaasClient
+    
+        client = WxKfSaasClient(test_config, mock_db_session)
+    
+        # Mock HTTP客户端
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"errcode": 0, "errmsg": "ok", "media_id": "test_media_id"}
+    
+        client._http_client = AsyncMock()
+        client._http_client.request.return_value = mock_response
+    
+        # Mock token manager
+        with patch('wxkf_saas.core.token_manager.MultiTenantTokenManager') as mock_token_manager:
+            mock_token_manager.return_value.get_token.return_value = "test_access_token"
+    
+            # 模拟文件上传
+            with patch('builtins.open', create=True) as mock_open:
+                mock_file = MagicMock()
+                mock_open.return_value.__enter__.return_value = mock_file
+    
+&gt;               result = await client._upload_file(
+                               ^^^^^^^^^^^^^^^^^^^
+                    "/media/upload",
+                    "test.jpg",
+                    corp_id="test_corp"
+                )
+E               AttributeError: 'WxKfSaasClient' object has no attribute '_upload_file'
+
+tests\test_client.py:157: AttributeError</failure></testcase><testcase classname="test_config" name="test_config_validation" time="0.022" /><testcase classname="test_config" name="test_config_validation_missing_fields" time="0.020"><failure message="Failed: DID NOT RAISE &lt;class 'pydantic_core._pydantic_core.ValidationError'&gt;">def test_config_validation_missing_fields():
+        """测试缺少必需字段的配置"""
+        from wxkf_saas.core.config import WxKfSaasConfig
+    
+        # 缺少必需字段
+&gt;       with pytest.raises(ValidationError) as exc_info:
+E       Failed: DID NOT RAISE &lt;class 'pydantic_core._pydantic_core.ValidationError'&gt;
+
+tests\test_config.py:54: Failed</failure></testcase><testcase classname="test_config" name="test_multi_database_config" time="0.036"><failure message="AssertionError: assert 'postgresql+psycopg2://' in 'mysql+pymysql://wxkf_saas:wxkf_saas@localhost:3306/wxkf_saas?charset=utf8mb4'&#10; +  where 'mysql+pymysql://wxkf_saas:wxkf_saas@localhost:3306/wxkf_saas?charset=utf8mb4' = WxKfSaasConfig(suite_id='你的服务商套件ID', suite_secret='你的服务商套件Secret', provider_secret='你的服务商Secret', provider_token='你在服务...DB_TYPE='postgresql', DB_HOST='localhost', DB_PORT=5432, DB_NAME='test_db', DB_USER='postgres', DB_PASSWORD='postgres').db_url">def test_multi_database_config():
+        """测试多数据库配置"""
+        from wxkf_saas.core.config import WxKfSaasConfig
+    
+        # 测试MySQL配置
+        mysql_config = WxKfSaasConfig(
+            DB_TYPE="mysql",
+            DB_HOST="localhost",
+            DB_PORT=3306,
+            DB_NAME="test_db",
+            DB_USER="test_user",
+            DB_PASSWORD="test_pass"
+        )
+    
+        assert "mysql+pymysql://" in mysql_config.db_url
+        assert "mysql+aiomysql://" in mysql_config.db_async_url
+    
+        # 测试PostgreSQL配置
+        pg_config = WxKfSaasConfig(
+            DB_TYPE="postgresql",
+            DB_HOST="localhost",
+            DB_PORT=5432,
+            DB_NAME="test_db",
+            DB_USER="postgres",
+            DB_PASSWORD="postgres"
+        )
+    
+&gt;       assert "postgresql+psycopg2://" in pg_config.db_url
+E       AssertionError: assert 'postgresql+psycopg2://' in 'mysql+pymysql://wxkf_saas:wxkf_saas@localhost:3306/wxkf_saas?charset=utf8mb4'
+E        +  where 'mysql+pymysql://wxkf_saas:wxkf_saas@localhost:3306/wxkf_saas?charset=utf8mb4' = WxKfSaasConfig(suite_id='你的服务商套件ID', suite_secret='你的服务商套件Secret', provider_secret='你的服务商Secret', provider_token='你在服务...DB_TYPE='postgresql', DB_HOST='localhost', DB_PORT=5432, DB_NAME='test_db', DB_USER='postgres', DB_PASSWORD='postgres').db_url
+
+tests\test_config.py:90: AssertionError</failure></testcase><testcase classname="test_config" name="test_direct_url_config" time="0.019"><failure message="AssertionError: assert 'mysql+pymysq...arset=utf8mb4' == 'mysql+pymysq...arset=utf8mb4'&#10;  &#10;  - mysql+pymysql://user:pass@host:3306/db?charset=utf8mb4&#10;  + mysql+pymysql://wxkf_saas:wxkf_saas@localhost:3306/wxkf_saas?charset=utf8mb4">def test_direct_url_config():
+        """测试直接URL配置"""
+        from wxkf_saas.core.config import WxKfSaasConfig
+    
+        config = WxKfSaasConfig(
+            DATABASE_URL="mysql+pymysql://user:pass@host:3306/db?charset=utf8mb4",
+            ASYNC_DATABASE_URL="mysql+aiomysql://user:pass@host:3306/db?charset=utf8mb4"
+        )
+    
+&gt;       assert config.db_url == "mysql+pymysql://user:pass@host:3306/db?charset=utf8mb4"
+E       AssertionError: assert 'mysql+pymysq...arset=utf8mb4' == 'mysql+pymysq...arset=utf8mb4'
+E         
+E         - mysql+pymysql://user:pass@host:3306/db?charset=utf8mb4
+E         + mysql+pymysql://wxkf_saas:wxkf_saas@localhost:3306/wxkf_saas?charset=utf8mb4
+
+tests\test_config.py:112: AssertionError</failure></testcase><testcase classname="test_config" name="test_config_properties" time="0.036" /><testcase classname="test_config" name="test_invalid_database_type" time="0.019"><failure message="Failed: DID NOT RAISE &lt;class 'ValueError'&gt;">def test_invalid_database_type():
+        """测试无效的数据库类型"""
+        from wxkf_saas.core.config import WxKfSaasConfig
+    
+&gt;       with pytest.raises(ValueError) as exc_info:
+E       Failed: DID NOT RAISE &lt;class 'ValueError'&gt;
+
+tests\test_config.py:162: Failed</failure></testcase><testcase classname="test_config" name="test_sqlite_missing_path" time="0.019"><failure message="Failed: DID NOT RAISE &lt;class 'ValueError'&gt;">def test_sqlite_missing_path():
+        """测试SQLite缺少路径"""
+        from wxkf_saas.core.config import WxKfSaasConfig
+    
+&gt;       with pytest.raises(ValueError) as exc_info:
+E       Failed: DID NOT RAISE &lt;class 'ValueError'&gt;
+
+tests\test_config.py:170: Failed</failure></testcase><testcase classname="test_database" name="test_database_connection" time="0.002"><failure message="Failed: async def functions are not natively supported.&#10;You need to install a suitable plugin for your async framework, for example:&#10;  - anyio&#10;  - pytest-asyncio&#10;  - pytest-tornasync&#10;  - pytest-trio&#10;  - pytest-twisted">async def functions are not natively supported.
+You need to install a suitable plugin for your async framework, for example:
+  - anyio
+  - pytest-asyncio
+  - pytest-tornasync
+  - pytest-trio
+  - pytest-twisted</failure></testcase><testcase classname="test_database" name="test_database_session_creation" time="0.001"><error message="failed on setup with &quot;pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.&#10;See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture&quot;">fixturedef = &lt;FixtureDef argname='test_database' scope='session' baseid=''&gt;
+request = &lt;SubRequest 'test_database' for &lt;Function test_database_session_creation&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+E               pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+E               See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:728: PytestRemovedIn9Warning</error></testcase><testcase classname="test_database" name="test_database_transaction" time="0.001"><error message="failed on setup with &quot;pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.&#10;See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture&quot;">fixturedef = &lt;FixtureDef argname='test_database' scope='session' baseid=''&gt;
+request = &lt;SubRequest 'test_database' for &lt;Function test_database_transaction&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+E               pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+E               See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:728: PytestRemovedIn9Warning</error></testcase><testcase classname="test_database" name="test_database_connection_pool" time="0.001"><error message="failed on setup with &quot;pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.&#10;See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture&quot;">fixturedef = &lt;FixtureDef argname='test_database' scope='session' baseid=''&gt;
+request = &lt;SubRequest 'test_database' for &lt;Function test_database_connection_pool&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+E               pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+E               See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:728: PytestRemovedIn9Warning</error></testcase><testcase classname="test_database" name="test_database_url_generation" time="0.020"><failure message="AssertionError: assert 'mysql+pymysq...arset=utf8mb4' == 'mysql+pymysq...arset=utf8mb4'&#10;  &#10;  - mysql+pymysql://test-user:test-pass@test-host:3306/test_db?charset=utf8mb4&#10;  + mysql+pymysql://wxkf_saas:wxkf_saas@localhost:3306/wxkf_saas?charset=utf8mb4">def test_database_url_generation():
+        """测试URL生成"""
+        from wxkf_saas.core.config import WxKfSaasConfig
+    
+        # 测试MySQL URL生成
+        config = WxKfSaasConfig(
+            DB_TYPE="mysql",
+            DB_HOST="test-host",
+            DB_PORT=3306,
+            DB_NAME="test_db",
+            DB_USER="test-user",
+            DB_PASSWORD="test-pass"
+        )
+    
+        expected_sync = "mysql+pymysql://test-user:test-pass@test-host:3306/test_db?charset=utf8mb4"
+        expected_async = "mysql+aiomysql://test-user:test-pass@test-host:3306/test_db?charset=utf8mb4"
+    
+&gt;       assert config.db_url == expected_sync
+E       AssertionError: assert 'mysql+pymysq...arset=utf8mb4' == 'mysql+pymysq...arset=utf8mb4'
+E         
+E         - mysql+pymysql://test-user:test-pass@test-host:3306/test_db?charset=utf8mb4
+E         + mysql+pymysql://wxkf_saas:wxkf_saas@localhost:3306/wxkf_saas?charset=utf8mb4
+
+tests\test_database.py:108: AssertionError</failure></testcase><testcase classname="test_database" name="test_database_operations" time="0.001"><error message="failed on setup with &quot;pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.&#10;See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture&quot;">fixturedef = &lt;FixtureDef argname='test_database' scope='session' baseid=''&gt;
+request = &lt;SubRequest 'test_database' for &lt;Function test_database_operations&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+E               pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+E               See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:728: PytestRemovedIn9Warning</error></testcase><testcase classname="test_database" name="test_database_error_handling" time="0.001"><error message="failed on setup with &quot;pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.&#10;See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture&quot;">fixturedef = &lt;FixtureDef argname='test_database' scope='session' baseid=''&gt;
+request = &lt;SubRequest 'test_database' for &lt;Function test_database_error_handling&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+E               pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+E               See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:728: PytestRemovedIn9Warning</error></testcase><testcase classname="test_database" name="test_database_async_operations" time="0.001"><error message="failed on setup with &quot;pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.&#10;See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture&quot;">self = &lt;Coroutine test_database_async_operations&gt;
+
+    def setup(self) -&gt; None:
+        runner_fixture_id = f"_{self._loop_scope}_scoped_runner"
+        if runner_fixture_id not in self.fixturenames:
+            self.fixturenames.append(runner_fixture_id)
+&gt;       return super().setup()
+               ^^^^^^^^^^^^^^^
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:458: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+fixturedef = &lt;FixtureDef argname='test_database' scope='session' baseid=''&gt;
+request = &lt;SubRequest 'test_database' for &lt;Coroutine test_database_async_operations&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+E               pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+E               See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:728: PytestRemovedIn9Warning</error></testcase><testcase classname="test_integration" name="test_full_api_workflow" time="0.004"><failure message="RuntimeError: Database not initialized. Call init_database first.">test_config = WxKfSaasConfig(suite_id='你的服务商套件ID', suite_secret='你的服务商套件Secret', provider_secret='你的服务商Secret', provider_token='你在服务...er_encoding_aes_key', REDIS_HOST='localhost', REDIS_PORT=6379, REDIS_DB=1, REDIS_KEY_PREFIX='test:', LOG_LEVEL='DEBUG')
+
+    @pytest.mark.asyncio
+    @pytest.mark.integration
+    async def test_full_api_workflow(test_config):
+        """测试完整的API工作流程"""
+        from wxkf_saas.core.database import get_async_db
+        from wxkf_saas.core.token_manager import MultiTenantTokenManager
+    
+&gt;       async with get_async_db() as session:
+                   ^^^^^^^^^^^^^^
+
+tests\test_integration.py:20: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+core\database.py:168: in get_async_db
+    return get_db_manager().get_async_session()
+           ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def get_db_manager() -&gt; DatabaseManager:
+        """获取全局数据库管理器实例
+    
+        Returns:
+            DatabaseManager: 数据库管理器实例
+    
+        Raises:
+            RuntimeError: 如果数据库未初始化
+        """
+        if _db_manager is None:
+&gt;           raise RuntimeError("Database not initialized. Call init_database first.")
+E           RuntimeError: Database not initialized. Call init_database first.
+
+core\database.py:149: RuntimeError</failure></testcase><testcase classname="test_integration" name="test_database_operations" time="0.001"><error message="failed on setup with &quot;pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.&#10;See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture&quot;">self = &lt;Coroutine test_database_operations&gt;
+
+    def setup(self) -&gt; None:
+        runner_fixture_id = f"_{self._loop_scope}_scoped_runner"
+        if runner_fixture_id not in self.fixturenames:
+            self.fixturenames.append(runner_fixture_id)
+&gt;       return super().setup()
+               ^^^^^^^^^^^^^^^
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:458: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+fixturedef = &lt;FixtureDef argname='test_database' scope='session' baseid=''&gt;
+request = &lt;SubRequest 'test_database' for &lt;Coroutine test_database_operations&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+E               pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+E               See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:728: PytestRemovedIn9Warning</error></testcase><testcase classname="test_integration" name="test_token_management_integration" time="0.003"><failure message="NameError: name 'test_config' is not defined">@pytest.mark.asyncio
+    async def test_token_management_integration():
+        """测试Token管理的集成"""
+        from wxkf_saas.core.token_manager import MultiTenantTokenManager
+    
+&gt;       token_manager = MultiTenantTokenManager(test_config)
+                                                ^^^^^^^^^^^
+E       NameError: name 'test_config' is not defined
+
+tests\test_integration.py:130: NameError</failure></testcase><testcase classname="test_integration" name="test_error_scenarios" time="0.004"><failure message="NameError: name 'test_config' is not defined">@pytest.mark.asyncio
+    async def test_error_scenarios():
+        """测试错误场景"""
+        from wxkf_saas.core.exceptions import TenantNotFoundError, TenantNotAuthorizedError
+        from wxkf_saas.core.client import WxKfSaasClient
+    
+&gt;       client = WxKfSaasClient(test_config)
+                                ^^^^^^^^^^^
+E       NameError: name 'test_config' is not defined
+
+tests\test_integration.py:154: NameError</failure></testcase><testcase classname="test_integration" name="test_concurrent_requests" time="0.004"><failure message="NameError: name 'test_config' is not defined">@pytest.mark.asyncio
+    async def test_concurrent_requests():
+        """测试并发请求"""
+        from wxkf_saas.core.client import WxKfSaasClient
+    
+&gt;       client = WxKfSaasClient(test_config)
+                                ^^^^^^^^^^^
+E       NameError: name 'test_config' is not defined
+
+tests\test_integration.py:182: NameError</failure></testcase><testcase classname="test_integration" name="test_api_response_format" time="0.002"><failure message="ImportError: cannot import name 'KfAccountResponse' from 'wxkf_saas.models.kf_account' (D:\project\python\wxkf_saas\models\kf_account.py)">def test_api_response_format():
+        """测试API响应格式"""
+&gt;       from wxkf_saas.models.kf_account import KfAccountResponse
+E       ImportError: cannot import name 'KfAccountResponse' from 'wxkf_saas.models.kf_account' (D:\project\python\wxkf_saas\models\kf_account.py)
+
+tests\test_integration.py:203: ImportError</failure></testcase><testcase classname="test_message_send_receive" name="test_message_apis" time="0.003" /><testcase classname="test_message_send_receive" name="test_media_apis" time="0.002"><failure message="Failed: async def functions are not natively supported.&#10;You need to install a suitable plugin for your async framework, for example:&#10;  - anyio&#10;  - pytest-asyncio&#10;  - pytest-tornasync&#10;  - pytest-trio&#10;  - pytest-twisted">async def functions are not natively supported.
+You need to install a suitable plugin for your async framework, for example:
+  - anyio
+  - pytest-asyncio
+  - pytest-tornasync
+  - pytest-trio
+  - pytest-twisted</failure></testcase><testcase classname="test_models" name="test_tenant_model_creation" time="0.004" /><testcase classname="test_models" name="test_tenant_model_validation" time="0.002"><failure message="Failed: DID NOT RAISE &lt;class 'pydantic_core._pydantic_core.ValidationError'&gt;">@pytest.mark.unit
+    def test_tenant_model_validation():
+        """测试租户模型验证"""
+        from wxkf_saas.models.tenant import Tenant
+    
+        # 测试必需字段缺失
+&gt;       with pytest.raises(ValidationError) as exc_info:
+E       Failed: DID NOT RAISE &lt;class 'pydantic_core._pydantic_core.ValidationError'&gt;
+
+tests\test_models.py:41: Failed</failure></testcase><testcase classname="test_models" name="test_tenant_token_model_creation" time="0.001" /><testcase classname="test_models" name="test_tenant_token_model_validation" time="0.002"><failure message="Failed: DID NOT RAISE &lt;class 'pydantic_core._pydantic_core.ValidationError'&gt;">@pytest.mark.unit
+    def test_tenant_token_model_validation():
+        """测试租户Token模型验证"""
+        from wxkf_saas.models.tenant import TenantToken
+    
+        # 测试无效token类型
+&gt;       with pytest.raises(ValidationError) as exc_info:
+E       Failed: DID NOT RAISE &lt;class 'pydantic_core._pydantic_core.ValidationError'&gt;
+
+tests\test_models.py:81: Failed</failure></testcase><testcase classname="test_models" name="test_kf_account_model_creation" time="0.002"><failure message="pydantic_core._pydantic_core.ValidationError: 1 validation error for KfAccount&#10;avatar&#10;  Field required [type=missing, input_value={'corp_id': 'test_corp', ...kfid': 'test_open_kfid'}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.5/v/missing">@pytest.mark.unit
+    def test_kf_account_model_creation():
+        """测试客服账号模型创建"""
+        from wxkf_saas.models.kf_account import KfAccount
+    
+&gt;       kf_account = KfAccount(
+            corp_id="test_corp",
+            name="测试客服",
+            media_id="test_media_id",
+            open_kfid="test_open_kfid"
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for KfAccount
+E       avatar
+E         Field required [type=missing, input_value={'corp_id': 'test_corp', ...kfid': 'test_open_kfid'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.5/v/missing
+
+tests\test_models.py:97: ValidationError</failure></testcase><testcase classname="test_models" name="test_message_model_creation" time="0.053"><failure message="ImportError: cannot import name 'Message' from 'wxkf_saas.models.message' (D:\project\python\wxkf_saas\models\message.py)">@pytest.mark.unit
+    def test_message_model_creation():
+        """测试消息模型创建"""
+&gt;       from wxkf_saas.models.message import Message
+E       ImportError: cannot import name 'Message' from 'wxkf_saas.models.message' (D:\project\python\wxkf_saas\models\message.py)
+
+tests\test_models.py:113: ImportError</failure></testcase><testcase classname="test_models" name="test_message_image_model_creation" time="0.001"><failure message="ImportError: cannot import name 'Message' from 'wxkf_saas.models.message' (D:\project\python\wxkf_saas\models\message.py)">@pytest.mark.unit
+    def test_message_image_model_creation():
+        """测试图片消息模型创建"""
+&gt;       from wxkf_saas.models.message import Message
+E       ImportError: cannot import name 'Message' from 'wxkf_saas.models.message' (D:\project\python\wxkf_saas\models\message.py)
+
+tests\test_models.py:135: ImportError</failure></testcase><testcase classname="test_models" name="test_message_voice_model_creation" time="0.001"><failure message="ImportError: cannot import name 'Message' from 'wxkf_saas.models.message' (D:\project\python\wxkf_saas\models\message.py)">@pytest.mark.unit
+    def test_message_voice_model_creation():
+        """测试语音消息模型创建"""
+&gt;       from wxkf_saas.models.message import Message
+E       ImportError: cannot import name 'Message' from 'wxkf_saas.models.message' (D:\project\python\wxkf_saas\models\message.py)
+
+tests\test_models.py:154: ImportError</failure></testcase><testcase classname="test_models" name="test_model_json_serialization" time="0.002"><failure message="AttributeError: 'Tenant' object has no attribute 'model_dump'">@pytest.mark.unit
+    def test_model_json_serialization():
+        """测试模型JSON序列化"""
+        from wxkf_saas.models.tenant import Tenant
+    
+        tenant = Tenant(
+            corp_id="test_corp_123",
+            corp_name="测试企业",
+            contact_name="张三"
+        )
+    
+        # 测试序列化为字典
+&gt;       tenant_dict = tenant.model_dump(exclude_none=True)
+                      ^^^^^^^^^^^^^^^^^
+E       AttributeError: 'Tenant' object has no attribute 'model_dump'
+
+tests\test_models.py:182: AttributeError</failure></testcase><testcase classname="test_models" name="test_model_from_dict" time="0.001" /><testcase classname="test_models" name="test_model_validation_custom" time="0.001" /><testcase classname="test_performance" name="test_database_performance" time="0.001"><error message="failed on setup with &quot;pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.&#10;See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture&quot;">self = &lt;Coroutine test_database_performance&gt;
+
+    def setup(self) -&gt; None:
+        runner_fixture_id = f"_{self._loop_scope}_scoped_runner"
+        if runner_fixture_id not in self.fixturenames:
+            self.fixturenames.append(runner_fixture_id)
+&gt;       return super().setup()
+               ^^^^^^^^^^^^^^^
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:458: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+fixturedef = &lt;FixtureDef argname='test_database' scope='session' baseid=''&gt;
+request = &lt;SubRequest 'test_database' for &lt;Coroutine test_database_performance&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+E               pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+E               See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:728: PytestRemovedIn9Warning</error></testcase><testcase classname="test_performance" name="test_concurrent_requests" time="0.004"><failure message="TypeError: WxKfSaasClient.__init__() missing 1 required positional argument: 'db_session'">test_config = WxKfSaasConfig(suite_id='你的服务商套件ID', suite_secret='你的服务商套件Secret', provider_secret='你的服务商Secret', provider_token='你在服务...er_encoding_aes_key', REDIS_HOST='localhost', REDIS_PORT=6379, REDIS_DB=1, REDIS_KEY_PREFIX='test:', LOG_LEVEL='DEBUG')
+
+    @pytest.mark.asyncio
+    async def test_concurrent_requests(test_config):
+        """测试并发请求性能"""
+        from wxkf_saas.core.client import WxKfSaasClient
+    
+&gt;       client = WxKfSaasClient(test_config)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: WxKfSaasClient.__init__() missing 1 required positional argument: 'db_session'
+
+tests\test_performance.py:47: TypeError</failure></testcase><testcase classname="test_performance" name="test_memory_usage" time="0.001"><error message="failed on setup with &quot;pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.&#10;See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture&quot;">self = &lt;Coroutine test_memory_usage&gt;
+
+    def setup(self) -&gt; None:
+        runner_fixture_id = f"_{self._loop_scope}_scoped_runner"
+        if runner_fixture_id not in self.fixturenames:
+            self.fixturenames.append(runner_fixture_id)
+&gt;       return super().setup()
+               ^^^^^^^^^^^^^^^
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:458: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+fixturedef = &lt;FixtureDef argname='test_database' scope='session' baseid=''&gt;
+request = &lt;SubRequest 'test_database' for &lt;Coroutine test_memory_usage&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+E               pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+E               See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:728: PytestRemovedIn9Warning</error></testcase><testcase classname="test_performance" name="test_connection_pool_efficiency" time="0.002"><failure message="Failed: async def functions are not natively supported.&#10;You need to install a suitable plugin for your async framework, for example:&#10;  - anyio&#10;  - pytest-asyncio&#10;  - pytest-tornasync&#10;  - pytest-trio&#10;  - pytest-twisted">async def functions are not natively supported.
+You need to install a suitable plugin for your async framework, for example:
+  - anyio
+  - pytest-asyncio
+  - pytest-tornasync
+  - pytest-trio
+  - pytest-twisted</failure></testcase><testcase classname="test_performance" name="test_api_response_time" time="0.003"><failure message="NameError: name 'test_config' is not defined">@pytest.mark.asyncio
+    async def test_api_response_time():
+        """测试API响应时间"""
+        from wxkf_saas.core.client import WxKfSaasClient
+    
+&gt;       client = WxKfSaasClient(test_config)
+                                ^^^^^^^^^^^
+E       NameError: name 'test_config' is not defined
+
+tests\test_performance.py:122: NameError</failure></testcase><testcase classname="test_performance" name="test_performance_metrics" time="0.002"><failure message="IndexError: list index out of range">def test_performance_metrics():
+        """测试性能指标收集"""
+        # 模拟性能指标
+        response_times = [0.1, 0.15, 0.2, 0.12, 0.18, 0.25, 0.3, 0.1]
+    
+        # 计算性能指标
+        avg_response_time = statistics.mean(response_times)
+        p95_response_time = statistics.quantiles(response_times, n=20)[4] * 100
+&gt;       p99_response_time = statistics.quantiles(response_times, n=10)[9] * 100
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       IndexError: list index out of range
+
+tests\test_performance.py:164: IndexError</failure></testcase><testcase classname="test_performance" name="test_load_capacity" time="0.004"><failure message="NameError: name 'test_config' is not defined">@pytest.mark.asyncio
+    async def test_load_capacity():
+        """测试负载能力"""
+        from wxkf_saas.core.client import WxKfSaasClient
+    
+&gt;       client = WxKfSaasClient(test_config)
+                                ^^^^^^^^^^^
+E       NameError: name 'test_config' is not defined
+
+tests\test_performance.py:176: NameError</failure></testcase><testcase classname="test_token_manager" name="test_token_manager_initialization" time="0.220" /><testcase classname="test_token_manager" name="test_provider_token_storage" time="0.001"><error message="failed on setup with &quot;pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.&#10;See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture&quot;">self = &lt;Coroutine test_provider_token_storage&gt;
+
+    def setup(self) -&gt; None:
+        runner_fixture_id = f"_{self._loop_scope}_scoped_runner"
+        if runner_fixture_id not in self.fixturenames:
+            self.fixturenames.append(runner_fixture_id)
+&gt;       return super().setup()
+               ^^^^^^^^^^^^^^^
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:458: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+fixturedef = &lt;FixtureDef argname='test_database' scope='session' baseid=''&gt;
+request = &lt;SubRequest 'test_database' for &lt;Coroutine test_provider_token_storage&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+E               pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+E               See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:728: PytestRemovedIn9Warning</error></testcase><testcase classname="test_token_manager" name="test_suite_token_storage" time="0.001"><error message="failed on setup with &quot;pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.&#10;See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture&quot;">self = &lt;Coroutine test_suite_token_storage&gt;
+
+    def setup(self) -&gt; None:
+        runner_fixture_id = f"_{self._loop_scope}_scoped_runner"
+        if runner_fixture_id not in self.fixturenames:
+            self.fixturenames.append(runner_fixture_id)
+&gt;       return super().setup()
+               ^^^^^^^^^^^^^^^
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:458: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+fixturedef = &lt;FixtureDef argname='test_database' scope='session' baseid=''&gt;
+request = &lt;SubRequest 'test_database' for &lt;Coroutine test_suite_token_storage&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+E               pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+E               See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:728: PytestRemovedIn9Warning</error></testcase><testcase classname="test_token_manager" name="test_tenant_token_storage" time="0.001"><error message="failed on setup with &quot;pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.&#10;See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture&quot;">self = &lt;Coroutine test_tenant_token_storage&gt;
+
+    def setup(self) -&gt; None:
+        runner_fixture_id = f"_{self._loop_scope}_scoped_runner"
+        if runner_fixture_id not in self.fixturenames:
+            self.fixturenames.append(runner_fixture_id)
+&gt;       return super().setup()
+               ^^^^^^^^^^^^^^^
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:458: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+fixturedef = &lt;FixtureDef argname='test_database' scope='session' baseid=''&gt;
+request = &lt;SubRequest 'test_database' for &lt;Coroutine test_tenant_token_storage&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+E               pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+E               See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:728: PytestRemovedIn9Warning</error></testcase><testcase classname="test_token_manager" name="test_token_expiration_handling" time="0.001"><error message="failed on setup with &quot;pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.&#10;See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture&quot;">self = &lt;Coroutine test_token_expiration_handling&gt;
+
+    def setup(self) -&gt; None:
+        runner_fixture_id = f"_{self._loop_scope}_scoped_runner"
+        if runner_fixture_id not in self.fixturenames:
+            self.fixturenames.append(runner_fixture_id)
+&gt;       return super().setup()
+               ^^^^^^^^^^^^^^^
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:458: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+fixturedef = &lt;FixtureDef argname='test_database' scope='session' baseid=''&gt;
+request = &lt;SubRequest 'test_database' for &lt;Coroutine test_token_expiration_handling&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+E               pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+E               See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:728: PytestRemovedIn9Warning</error></testcase><testcase classname="test_token_manager" name="test_token_auto_refresh" time="0.001"><error message="failed on setup with &quot;pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.&#10;See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture&quot;">self = &lt;Coroutine test_token_auto_refresh&gt;
+
+    def setup(self) -&gt; None:
+        runner_fixture_id = f"_{self._loop_scope}_scoped_runner"
+        if runner_fixture_id not in self.fixturenames:
+            self.fixturenames.append(runner_fixture_id)
+&gt;       return super().setup()
+               ^^^^^^^^^^^^^^^
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:458: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+fixturedef = &lt;FixtureDef argname='test_database' scope='session' baseid=''&gt;
+request = &lt;SubRequest 'test_database' for &lt;Coroutine test_token_auto_refresh&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+E               pytest.PytestRemovedIn9Warning: '' requested an async fixture 'test_database', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+E               See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+
+venv\Lib\site-packages\pytest_asyncio\plugin.py:728: PytestRemovedIn9Warning</error></testcase><testcase classname="test_token_manager" name="test_redis_token_caching" time="0.229"><failure message="AttributeError: 'MultiTenantTokenManager' object has no attribute '_get_cached_token'">mock_db_session = &lt;MagicMock id='2000328959504'&gt;
+
+    @pytest.mark.asyncio
+    @pytest.mark.unit
+    async def test_redis_token_caching(mock_db_session):
+        """测试Redis token缓存"""
+        from wxkf_saas.core.token_manager import MultiTenantTokenManager
+    
+        config = MagicMock()
+        config.redis_host = "localhost"
+        config.redis_port = 6379
+        config.redis_db = 1
+        config.redis_key_prefix = "test:"
+    
+        # Mock Redis客户端
+        mock_redis = AsyncMock()
+        mock_redis.get.return_value = None
+        mock_redis.setex.return_value = True
+    
+        manager = MultiTenantTokenManager(config, mock_db_session)
+        manager._redis_client = mock_redis
+    
+        # 测试缓存未命中
+&gt;       result = await manager._get_cached_token("test_corp", "access_token")
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MultiTenantTokenManager' object has no attribute '_get_cached_token'
+
+tests\test_token_manager.py:208: AttributeError</failure></testcase></testsuite></testsuites>

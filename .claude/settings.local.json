@@ -23,7 +23,9 @@
       "mcp__chrome-devtools__evaluate_script",
       "Bash(git remote add:*)",
       "Bash(git push:*)",
-      "Bash(git remote set-url:*)"
+      "Bash(git remote set-url:*)",
+      "mcp__chrome-devtools__list_pages",
+      "mcp__chrome-devtools__navigate_page"
     ],
     "deny": [],
     "ask": []
