@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================
-# wxkf_saas 代码同步脚本
-# 功能：从 origin/bwx_dev 拉取最新代码（增量更新+同步删除）
+# wxkf_saas 代码增量同步脚本
+# 功能：从 origin/bwx_dev 拉取最新代码（真正的增量更新）
 # ============================================
 
 set -e  # 遇到错误立即退出
@@ -23,15 +23,15 @@ echo -e "${GREEN}========================================${NC}"
 cd "$PROJECT_DIR"
 
 # 1. 检查当前状态
-echo -e "\n${YELLOW}[1/7] 检查当前 Git 状态...${NC}"
+echo -e "\n${YELLOW}[1/6] 检查当前 Git 状态...${NC}"
 git status --short
 
 # 2. 获取最新代码
-echo -e "\n${YELLOW}[2/7] 从远程获取最新代码...${NC}"
+echo -e "\n${YELLOW}[2/6] 从远程获取最新代码...${NC}"
 git fetch origin "$BRANCH"
 
 # 3. 检查是否有更新
-echo -e "\n${YELLOW}[3/8] 检查代码更新...${NC}"
+echo -e "\n${YELLOW}[3/6] 检查代码更新...${NC}"
 LOCAL=$(git rev-parse HEAD)
 REMOTE=$(git rev-parse origin/"$BRANCH")
 
@@ -42,57 +42,66 @@ fi
 
 echo -e "${YELLOW}发现更新，正在同步...${NC}"
 
-# 4. 备份重要文件（如果有）
-echo -e "\n${YELLOW}[4/8] 备份重要文件...${NC}"
-BACKUP_DIR="/tmp/wxkf_backup_$(date +%Y%m%d_%H%M%S)"
-mkdir -p "$BACKUP_DIR"
-
-# 备份可能存在的重要文件
-[ -f .env ] && cp .env "$BACKUP_DIR/" 2>/dev/null || true
-[ -d logs/ ] && cp -r logs/ "$BACKUP_DIR/" 2>/dev/null || true
-[ -d uploads/ ] && cp -r uploads/ "$BACKUP_DIR/" 2>/dev/null || true
-
-# 5. 检查并处理本地修改
-echo -e "\n${YELLOW}[5/8] 检查本地修改...${NC}"
+# 4. 备份本地修改（如果有）
+echo -e "\n${YELLOW}[4/6] 处理本地修改...${NC}"
 if ! git diff-index --quiet HEAD --; then
     echo -e "${RED}警告：发现本地修改！${NC}"
     echo -e "${YELLOW}本地修改将被暂存...${NC}"
     git stash push -m "自动暂存 $(date)"
 fi
 
-# 6. 同步代码（包括删除远程已删除的文件）
-echo -e "\n${YELLOW}[6/8] 同步代码（包括删除）...${NC}"
-git fetch origin "$BRANCH"
-git reset --hard "origin/$BRANCH"
+# 5. 增量更新代码
+echo -e "\n${YELLOW}[5/6] 增量更新代码...${NC}"
 
-# 7. 恢复重要文件
-echo -e "\n${YELLOW}[7/8] 恢复重要文件...${NC}"
-[ -f "$BACKUP_DIR/.env" ] && cp "$BACKUP_DIR/.env" . 2>/dev/null || true
-[ -d "$BACKUP_DIR/logs" ] && cp -r "$BACKUP_DIR/logs" . 2>/dev/null || true
-[ -d "$BACKUP_DIR/uploads" ] && cp -r "$BACKUP_DIR/uploads" . 2>/dev/null || true
+# 方案：使用 git merge 替代 git pull，然后清理已删除的文件
+git merge origin/"$BRANCH" --no-edit --ff-only
 
-# 清理备份目录
-rm -rf "$BACKUP_DIR"
+# 5.1 同步删除远程已删除的文件（排除重要文件）
+echo -e "\n${YELLOW}[5.1/6] 同步删除远程已删除的文件...${NC}"
 
-# 8. 清理 Python 缓存（可选）
-echo -e "\n${YELLOW}[8/8] 清理 Python 缓存...${NC}"
-find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-find . -name "*.pyc" -delete 2>/dev/null || true
+# 获取本次 merge 中删除的文件列表
+DELETED_FILES=$(git diff --name-only --diff-filter=D HEAD~1 HEAD 2>/dev/null || true)
 
-# 9. 显示更新结果
-echo -e "\n${YELLOW}更新完成，当前状态：${NC}"
+if [ -n "$DELETED_FILES" ]; then
+    echo -e "${YELLOW}发现以下文件在远程已被删除：${NC}"
+    echo "$DELETED_FILES"
+
+    # 删除这些文件，但排除重要文件
+    for file in $DELETED_FILES; do
+        # 检查文件是否仍然存在（可能已经被删除）
+        [ ! -f "$file" ] && continue
+
+        # 检查是否是重要文件
+        if [[ "$file" == .env ]] || [[ "$file" == logs/* ]] || [[ "$file" == uploads/* ]] || [[ "$file" == *.log ]]; then
+            echo -e "${YELLOW}跳过重要文件：${file}${NC}"
+            continue
+        fi
+
+        # 确认删除（为了安全，添加确认提示）
+        echo -e "${YELLOW}删除远程已移除的文件：${file}${NC}"
+        rm -f "$file"
+    done
+else
+    echo -e "${GREEN}没有需要删除的文件${NC}"
+fi
+
+# 6. 显示更新结果
+echo -e "\n${YELLOW}[6/6] 更新完成，当前状态：${NC}"
 echo -e "${GREEN}最新提交：${NC}"
 git log -2 --oneline
 echo ""
 
 # 检查是否需要重启服务
 echo -e "${YELLOW}检查是否需要重启服务...${NC}"
+# 获取本次更新的文件列表
+UPDATED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || true)
+
 # 检查关键文件是否有更新
 NEED_RESTART=false
 KEY_FILES=("main.py" "core/" "api/" "models/")
 
 for file in "${KEY_FILES[@]}"; do
-    if git diff --name-only HEAD~1 HEAD | grep -q "^$file"; then
+    if echo "$UPDATED_FILES" | grep -q "^$file"; then
         NEED_RESTART=true
         break
     fi
@@ -107,6 +116,11 @@ if [ "$NEED_RESTART" = true ]; then
 else
     echo -e "${GREEN}仅配置文件或文档更新，无需重启服务${NC}"
 fi
+
+# 清理 Python 缓存
+echo -e "\n${YELLOW}清理 Python 缓存...${NC}"
+find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+find . -name "*.pyc" -delete 2>/dev/null || true
 
 echo -e "\n${GREEN}========================================${NC}"
 echo -e "${GREEN}代码增量同步完成！${NC}"
