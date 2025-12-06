@@ -6,7 +6,6 @@ test_scripts/
 logs/
 __pycache__/
 htmlcov/
-k8s/
 scripts/
 wxkf_saas.egg-info/
 
@@ -15,3 +14,5 @@ wxkf_saas.egg-info/
 
 # Claude Code 本地设置
 .claude/settings.local.json
+
+update_code.sh

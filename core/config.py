@@ -342,6 +342,7 @@ class WxKfSaasConfig(BaseSettings):
         # 根据模式验证不同配置
         if self.mode == "single":
             # 单体模式验证
+            missing_fields = []
             single_required_fields = [
                 ('corp_id', '企业ID'),
                 ('corp_secret', '企业Secret'),
@@ -361,6 +362,7 @@ class WxKfSaasConfig(BaseSettings):
 
         elif self.mode == "provider":
             # 服务商模式验证
+            missing_fields = []
             provider_required_fields = [
                 ('suite_id', '服务商套件ID'),
                 ('suite_secret', '服务商套件Secret'),
@@ -397,8 +399,16 @@ class WxKfSaasConfig(BaseSettings):
     def print_config_summary(self):
         """打印配置摘要（隐藏敏感信息）"""
         print("\n📋 配置摘要:")
-        print(f"   服务商: {self.suite_id[:8]}...")
-        print(f"   数据库: {self.db_host}:{self.db_port}/{self.db_name}")
+
+        # 从数据库URL中提取信息用于显示
+        try:
+            import urllib.parse
+            parsed = urllib.parse.urlparse(self.database_url)
+            db_info = f"{parsed.hostname}:{parsed.port}/{parsed.path.lstrip('/')}"
+            print(f"   数据库: {db_info}")
+        except:
+            print(f"   数据库: {self.database_url[:50]}...")
+
         print(f"   Redis: {self.redis_host}:{self.redis_port}/{self.redis_db}")
         print(f"   服务端口: {self.fastapi_port}")
         print(f"   服务器URL: {self.server_url or '未配置'}")
