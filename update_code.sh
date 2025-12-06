@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================
-# wxkf_saas 代码增量同步脚本
-# 功能：从 origin/bwx_dev 拉取最新代码（增量更新）
+# wxkf_saas 代码同步脚本
+# 功能：从 origin/bwx_dev 拉取最新代码（增量更新+同步删除）
 # ============================================
 
 set -e  # 遇到错误立即退出
@@ -31,7 +31,7 @@ echo -e "\n${YELLOW}[2/7] 从远程获取最新代码...${NC}"
 git fetch origin "$BRANCH"
 
 # 3. 检查是否有更新
-echo -e "\n${YELLOW}[3/7] 检查代码更新...${NC}"
+echo -e "\n${YELLOW}[3/8] 检查代码更新...${NC}"
 LOCAL=$(git rev-parse HEAD)
 REMOTE=$(git rev-parse origin/"$BRANCH")
 
@@ -42,25 +42,45 @@ fi
 
 echo -e "${YELLOW}发现更新，正在同步...${NC}"
 
-# 4. 检查是否有未提交的本地修改
-echo -e "\n${YELLOW}[4/7] 检查本地修改...${NC}"
+# 4. 备份重要文件（如果有）
+echo -e "\n${YELLOW}[4/8] 备份重要文件...${NC}"
+BACKUP_DIR="/tmp/wxkf_backup_$(date +%Y%m%d_%H%M%S)"
+mkdir -p "$BACKUP_DIR"
+
+# 备份可能存在的重要文件
+[ -f .env ] && cp .env "$BACKUP_DIR/" 2>/dev/null || true
+[ -d logs/ ] && cp -r logs/ "$BACKUP_DIR/" 2>/dev/null || true
+[ -d uploads/ ] && cp -r uploads/ "$BACKUP_DIR/" 2>/dev/null || true
+
+# 5. 检查并处理本地修改
+echo -e "\n${YELLOW}[5/8] 检查本地修改...${NC}"
 if ! git diff-index --quiet HEAD --; then
     echo -e "${RED}警告：发现本地修改！${NC}"
     echo -e "${YELLOW}本地修改将被暂存...${NC}"
     git stash push -m "自动暂存 $(date)"
 fi
 
-# 5. 增量更新代码
-echo -e "\n${YELLOW}[5/7] 增量更新代码...${NC}"
-git pull origin "$BRANCH"
+# 6. 同步代码（包括删除远程已删除的文件）
+echo -e "\n${YELLOW}[6/8] 同步代码（包括删除）...${NC}"
+git fetch origin "$BRANCH"
+git reset --hard "origin/$BRANCH"
 
-# 6. 清理 Python 缓存（可选）
-echo -e "\n${YELLOW}[6/7] 清理 Python 缓存...${NC}"
+# 7. 恢复重要文件
+echo -e "\n${YELLOW}[7/8] 恢复重要文件...${NC}"
+[ -f "$BACKUP_DIR/.env" ] && cp "$BACKUP_DIR/.env" . 2>/dev/null || true
+[ -d "$BACKUP_DIR/logs" ] && cp -r "$BACKUP_DIR/logs" . 2>/dev/null || true
+[ -d "$BACKUP_DIR/uploads" ] && cp -r "$BACKUP_DIR/uploads" . 2>/dev/null || true
+
+# 清理备份目录
+rm -rf "$BACKUP_DIR"
+
+# 8. 清理 Python 缓存（可选）
+echo -e "\n${YELLOW}[8/8] 清理 Python 缓存...${NC}"
 find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 find . -name "*.pyc" -delete 2>/dev/null || true
 
-# 7. 显示更新结果
-echo -e "\n${YELLOW}[7/7] 更新完成，当前状态：${NC}"
+# 9. 显示更新结果
+echo -e "\n${YELLOW}更新完成，当前状态：${NC}"
 echo -e "${GREEN}最新提交：${NC}"
 git log -2 --oneline
 echo ""
