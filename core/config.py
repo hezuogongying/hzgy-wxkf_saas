@@ -4,7 +4,7 @@
 import os
 from typing import Optional, List, Union
 from pathlib import Path
-from pydantic import field_validator, model_validator, Field
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -76,22 +76,13 @@ class WxKfSaasConfig(BaseSettings):
 
     # ===== 服务器配置 =====
     server_url: Optional[str] = None
-    fastapi_host: str = Field(default="0.0.0.0", description="服务监听地址")
-    fastapi_port: int = Field(default=58083, description="服务端口")
+    fastapi_host: str = "0.0.0.0"
+    fastapi_port: int = 8083
 
     # ===== 数据库配置(必需) =====
     # 推荐直接配置数据库URL，避免重复配置
     database_url: str  # 同步URL (必需)
     async_database_url: str  # 异步URL (必需)
-
-    # 以下配置已弃用，由database_url提供
-    # db_type: str = "mysql"
-    # db_host: Optional[str] = "localhost"
-    # db_port: Optional[int] = 3306
-    # db_name: Optional[str] = None
-    # db_user: Optional[str] = None
-    # db_password: Optional[str] = None
-    # db_path: Optional[str] = "./data/app.db"  # SQLite专用
     db_pool_size: int = 10
     db_max_overflow: int = 20
 
@@ -103,10 +94,10 @@ class WxKfSaasConfig(BaseSettings):
     redis_key_prefix: str = "wxkf_saas:"
 
     # ===== OpenAI配置(可选) =====
-    openai_api_key: Optional[str] = Field(default=None, description="OpenAI API密钥")
-    openai_base_url: Optional[str] = Field(default="https://api.openai.com/v1", description="OpenAI API基础URL")
-    openai_model_name: Optional[str] = Field(default="gpt-3.5-turbo", description="OpenAI模型名称")
-    openai_system_prompt: Optional[str] = Field(default="你是一个专业的客服助手", description="系统提示词")
+    openai_api_key: Optional[str] = None
+    openai_base_url: Optional[str] = "https://api.openai.com/v1"
+    openai_model_name: Optional[str] = "gpt-3.5-turbo"
+    openai_system_prompt: Optional[str] = None
 
     # ===== 日志配置 =====
     log_level: str = "INFO"
@@ -349,8 +340,6 @@ class WxKfSaasConfig(BaseSettings):
             print(f"   数据库: {self.database_url}")
 
         # 根据模式验证不同配置
-        missing_fields = []
-
         if self.mode == "single":
             # 单体模式验证
             single_required_fields = [
