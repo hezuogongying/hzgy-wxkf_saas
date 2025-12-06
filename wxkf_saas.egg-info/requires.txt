@@ -1,9 +1,0 @@
-fastapi
-uvicorn
-pydantic
-sqlalchemy
-asyncmy
-pymysql
-redis
-httpx
-python-multipart
