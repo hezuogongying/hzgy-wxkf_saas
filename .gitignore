@@ -6,6 +6,8 @@ test_scripts/
 logs/
 __pycache__/
 htmlcov/
+k8s/
+wxkf_saas.egg-info/
 
 *.pyc
 .env
