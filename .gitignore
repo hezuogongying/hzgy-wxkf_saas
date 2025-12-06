@@ -7,6 +7,7 @@ logs/
 __pycache__/
 htmlcov/
 k8s/
+scripts/
 wxkf_saas.egg-info/
 
 *.pyc
