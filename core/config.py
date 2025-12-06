@@ -56,12 +56,23 @@ class WxKfSaasConfig(BaseSettings):
         case_sensitive=False  # 环境变量不区分大小写
     )
 
-    # ===== 服务商模式配置(必需) =====
-    suite_id: str
-    suite_secret: str
-    provider_secret: str
-    provider_token: str
-    provider_encoding_aes_key: str
+    # ===== 运行模式 =====
+    # 支持两种模式: single(单体模式) 和 provider(服务商模式)
+    mode: str = "single"  # 默认为单体模式
+
+    # ===== 单体模式配置(企业自用) =====
+    corp_id: Optional[str] = None
+    corp_secret: Optional[str] = None
+    corp_callback_url: Optional[str] = None
+    corp_callback_token: Optional[str] = None
+    corp_callback_encoding_aes_key: Optional[str] = None
+
+    # ===== 服务商模式配置(可选) =====
+    suite_id: Optional[str] = None
+    suite_secret: Optional[str] = None
+    provider_secret: Optional[str] = None
+    provider_token: Optional[str] = None
+    provider_encoding_aes_key: Optional[str] = None
 
     # ===== 服务器配置 =====
     server_url: Optional[str] = None
@@ -321,35 +332,76 @@ class WxKfSaasConfig(BaseSettings):
 
     def validate_config(self):
         """验证配置完整性"""
-        required_fields = [
-            ('suite_id', '服务商套件ID'),
-            ('suite_secret', '服务商套件Secret'),
-            ('provider_secret', '服务商密钥'),
-            ('provider_token', '服务商回调Token'),
-            ('provider_encoding_aes_key', '服务商回调加密密钥'),
+        # 数据库配置始终必需
+        db_required_fields = [
             ('db_name', '数据库名称'),
             ('db_user', '数据库用户'),
             ('db_password', '数据库密码'),
         ]
 
         missing_fields = []
-        for field_name, field_desc in required_fields:
+        for field_name, field_desc in db_required_fields:
             if not getattr(self, field_name, None):
                 missing_fields.append(field_desc)
 
         if missing_fields:
             raise ValueError(
-                f"SaaS模式缺少必需配置: {', '.join(missing_fields)}"
+                f"缺少必需的数据库配置: {', '.join(missing_fields)}"
             )
+
+        # 根据模式验证不同配置
+        if self.mode == "single":
+            # 单体模式验证
+            single_required_fields = [
+                ('corp_id', '企业ID'),
+                ('corp_secret', '企业Secret'),
+            ]
+
+            for field_name, field_desc in single_required_fields:
+                if not getattr(self, field_name, None):
+                    missing_fields.append(field_desc)
+
+            if missing_fields:
+                raise ValueError(
+                    f"单体模式缺少必需配置: {', '.join(missing_fields)}"
+                )
+
+            print("✅ 使用单体模式（企业自用）")
+            print(f"   企业ID: {self.corp_id}")
+
+        elif self.mode == "provider":
+            # 服务商模式验证
+            provider_required_fields = [
+                ('suite_id', '服务商套件ID'),
+                ('suite_secret', '服务商套件Secret'),
+                ('provider_secret', '服务商密钥'),
+                ('provider_token', '服务商回调Token'),
+                ('provider_encoding_aes_key', '服务商回调加密密钥'),
+            ]
+
+            for field_name, field_desc in provider_required_fields:
+                if not getattr(self, field_name, None):
+                    missing_fields.append(field_desc)
+
+            if missing_fields:
+                raise ValueError(
+                    f"服务商模式缺少必需配置: {', '.join(missing_fields)}"
+                )
+
+            print("✅ 使用服务商模式（SaaS）")
 
         # 验证回调URL配置（用于生产环境）
         if not self.server_url:
             print("⚠️ 警告: 未配置SERVER_URL，生产环境需要配置以支持微信回调")
 
-        if not self.provider_callback_url:
-            print("⚠️ 警告: 服务商回调URL未配置，无法接收授权事件")
+        if self.mode == "single" and not self.corp_callback_url:
+            print("⚠️ 警告: 企业回调URL未配置，无法接收客户消息")
 
-        if not self.suite_callback_url:
+        if self.mode == "provider":
+            if not self.provider_callback_url:
+                print("⚠️ 警告: 服务商回调URL未配置，无法接收授权事件")
+
+            if not self.suite_callback_url:
             print("⚠️ 警告: 套件回调URL未配置，无法接收企业授权事件")
 
     def print_config_summary(self):

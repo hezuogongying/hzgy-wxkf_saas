@@ -22,9 +22,20 @@ async def get_callback_handler() -> CallbackHandler:
     global _callback_handler
     if _callback_handler is None:
         config = WxKfSaasConfig()
+
+        # 根据模式选择不同的配置
+        if config.mode == "single":
+            # 单体模式使用企业回调配置
+            token = config.corp_callback_token
+            encoding_aes_key = config.corp_callback_encoding_aes_key
+        else:
+            # 服务商模式使用服务商回调配置
+            token = config.provider_token
+            encoding_aes_key = config.provider_encoding_aes_key
+
         crypto = WxKfCrypto(
-            token=config.provider_token,
-            encoding_aes_key=config.provider_encoding_aes_key
+            token=token,
+            encoding_aes_key=encoding_aes_key
         )
         _callback_handler = CallbackHandler(crypto)
     return _callback_handler
@@ -33,9 +44,20 @@ async def get_callback_handler() -> CallbackHandler:
 async def get_crypto() -> WxKfCrypto:
     """获取加解密实例"""
     config = WxKfSaasConfig()
+
+    # 根据模式选择不同的配置
+    if config.mode == "single":
+        # 单体模式使用企业回调配置
+        token = config.corp_callback_token
+        encoding_aes_key = config.corp_callback_encoding_aes_key
+    else:
+        # 服务商模式使用服务商回调配置
+        token = config.provider_token
+        encoding_aes_key = config.provider_encoding_aes_key
+
     return WxKfCrypto(
-        token=config.provider_token,
-        encoding_aes_key=config.provider_encoding_aes_key
+        token=token,
+        encoding_aes_key=encoding_aes_key
     )
 
 

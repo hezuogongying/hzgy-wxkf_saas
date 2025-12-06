@@ -1,0 +1,71 @@
+# GitHub 仓库自动同步到 Gitee 企业版
+#
+# 功能:
+#   1. 定时扫描 GitHub 所有仓库
+#   2. 自动在 Gitee 企业版创建对应仓库
+#   3. 触发已有仓库的镜像同步
+#
+# 需要配置的 Secrets:
+#   - GH_PAT: GitHub Personal Access Token (需要 repo 权限)
+#   - GITEE_TOKEN: Gitee 私人令牌 (需要 projects、enterprises 权限)
+#
+# 注意: 这个 workflow 需要放在一个"管理仓库"中运行
+#       因为它会管理所有仓库的同步
+
+name: Sync All Repos to Gitee Enterprise
+
+on:
+  # 定时执行: 每天凌晨 2 点 (UTC+8 即北京时间)
+  schedule:
+    - cron: '0 18 * * *'  # UTC 18:00 = 北京时间 02:00
+
+  # 手动触发
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '仅检查，不创建仓库'
+        required: false
+        default: 'false'
+        type: boolean
+
+  # 当有新仓库创建时也触发 (通过 push 到 main 分支)
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - '.github/scripts/sync_github_to_gitee.py'
+      - '.github/workflows/sync-all-repos-to-gitee.yml'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Sync repositories to Gitee
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+          GITHUB_USERNAME: hezuogongying
+          GITEE_ENTERPRISE: hezuo_111
+        run: |
+          python .github/scripts/sync_github_to_gitee.py
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## 同步完成" >> $GITHUB_STEP_SUMMARY
+          echo "- 时间: $(date '+%Y-%m-%d %H:%M:%S')" >> $GITHUB_STEP_SUMMARY
+          echo "- GitHub 用户: hezuogongying" >> $GITHUB_STEP_SUMMARY
+          echo "- Gitee 企业: hezuo_111" >> $GITHUB_STEP_SUMMARY

@@ -35,6 +35,7 @@ if str(project_root) in sys.path:
     from routes.message import router as message_router
     from routes.media import router as media_router
     from routes.callback import router as callback_router
+    from routes.contact import router as contact_router
 else:
     raise ImportError("无法添加项目路径到 sys.path")
 
@@ -173,6 +174,7 @@ app.include_router(kf_account_router)
 app.include_router(message_router)
 app.include_router(media_router)
 app.include_router(callback_router)
+app.include_router(contact_router)
 
 
 # 健康检查

@@ -17,10 +17,15 @@ from models.tenant import (
 router = APIRouter(prefix="/api/tenants", tags=["租户管理"])
 
 
+def get_db_session(db_gen=Depends(get_db)) -> Session:
+    """从依赖注入的生成器中获取数据库会话"""
+    return next(db_gen)
+
+
 @router.post("/", response_model=TenantResponse, summary="创建租户")
 def create_tenant(
     tenant_data: TenantCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db_session)
 ):
     """创建新租户
 
@@ -49,8 +54,6 @@ def create_tenant(
         contact_phone=tenant_data.contact_phone,
         contact_email=tenant_data.contact_email,
         remark=tenant_data.remark,
-        is_active=True,
-        is_authorized=False  # 需要通过授权流程后才设置为True
     )
 
     db.add(tenant)
@@ -62,40 +65,34 @@ def create_tenant(
 
 @router.get("/", response_model=TenantListResponse, summary="获取租户列表")
 def list_tenants(
-    skip: int = Query(0, ge=0, description="跳过记录数"),
-    limit: int = Query(20, ge=1, le=100, description="每页记录数"),
-    is_active: bool = Query(None, description="是否激活"),
-    db: Session = Depends(get_db)
+    skip: int = Query(0, ge=0, description="跳过的记录数"),
+    limit: int = Query(20, ge=1, le=100, description="返回的记录数"),
+    db: Session = Depends(get_db_session)
 ):
     """获取租户列表
 
     Args:
-        skip: 跳过记录数
-        limit: 每页记录数
-        is_active: 是否激活(可选)
+        skip: 跳过的记录数
+        limit: 返回的记录数
         db: 数据库会话
 
     Returns:
-        TenantListResponse: 租户列表和总数
+        TenantListResponse: 租户列表响应
     """
     query = db.query(Tenant)
-
-    if is_active is not None:
-        query = query.filter(Tenant.is_active == is_active)
-
     total = query.count()
     tenants = query.offset(skip).limit(limit).all()
 
-    return TenantListResponse(
-        total=total,
-        items=tenants
-    )
+    return {
+        "total": total,
+        "items": tenants,
+    }
 
 
 @router.get("/{corp_id}", response_model=TenantResponse, summary="获取租户详情")
 def get_tenant(
     corp_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db_session)
 ):
     """获取租户详情
 
@@ -104,7 +101,7 @@ def get_tenant(
         db: 数据库会话
 
     Returns:
-        TenantResponse: 租户信息
+        TenantResponse: 租户详情
 
     Raises:
         HTTPException: 租户不存在
@@ -116,11 +113,11 @@ def get_tenant(
     return tenant
 
 
-@router.put("/{corp_id}", response_model=TenantResponse, summary="更新租户")
+@router.put("/{corp_id}", response_model=TenantResponse, summary="更新租户信息")
 def update_tenant(
     corp_id: str,
     tenant_data: TenantUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db_session)
 ):
     """更新租户信息
 
@@ -150,10 +147,71 @@ def update_tenant(
     return tenant
 
 
+@router.put("/{corp_id}/status", response_model=TenantResponse, summary="激活/停用租户")
+def activate_tenant(
+    corp_id: str,
+    is_active: bool = Query(..., description="是否激活"),
+    db: Session = Depends(get_db_session)
+):
+    """激活或停用租户
+
+    Args:
+        corp_id: 企业ID
+        is_active: 是否激活
+        db: 数据库会话
+
+    Returns:
+        TenantResponse: 更新后的租户信息
+
+    Raises:
+        HTTPException: 租户不存在
+    """
+    tenant = db.query(Tenant).filter(Tenant.corp_id == corp_id).first()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+
+    tenant.is_active = is_active
+    db.commit()
+    db.refresh(tenant)
+
+    return tenant
+
+
+@router.put("/{corp_id}/permanent-code", response_model=TenantResponse, summary="设置永久授权码")
+def set_permanent_code(
+    corp_id: str,
+    permanent_code: str = Query(..., description="永久授权码"),
+    db: Session = Depends(get_db_session)
+):
+    """设置租户的永久授权码
+
+    Args:
+        corp_id: 企业ID
+        permanent_code: 永久授权码
+        db: 数据库会话
+
+    Returns:
+        TenantResponse: 更新后的租户信息
+
+    Raises:
+        HTTPException: 租户不存在
+    """
+    tenant = db.query(Tenant).filter(Tenant.corp_id == corp_id).first()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+
+    tenant.permanent_code = permanent_code
+    tenant.is_authorized = True
+    db.commit()
+    db.refresh(tenant)
+
+    return tenant
+
+
 @router.delete("/{corp_id}", summary="删除租户")
 def delete_tenant(
     corp_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db_session)
 ):
     """删除租户
 

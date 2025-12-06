@@ -52,11 +52,11 @@ class MultiTenantTokenManager:
         # Token提前刷新时间(秒)
         self.token_refresh_advance = 60
 
-    def get_corp_access_token(self, corp_id: str) -> str:
+    def get_corp_access_token(self, corp_id: Optional[str] = None) -> str:
         """获取企业的access_token
 
         Args:
-            corp_id: 企业ID
+            corp_id: 企业ID（单体模式下可选，使用配置中的corp_id）
 
         Returns:
             str: 有效的access_token
@@ -66,6 +66,16 @@ class MultiTenantTokenManager:
             TenantNotAuthorizedError: 租户未授权
             WxKfApiError: API调用失败
         """
+        # 处理单体模式
+        if self.config.mode == "single":
+            corp_id = self.config.corp_id
+            # 直接使用企业的secret获取token，不需要permanent_code
+            return self._fetch_single_corp_access_token()
+
+        # 服务商模式处理
+        if not corp_id:
+            raise ValueError("服务商模式下必须提供corp_id")
+
         # 1. 检查租户是否存在
         tenant = self.db.query(Tenant).filter(Tenant.corp_id == corp_id).first()
         if not tenant:
@@ -265,6 +275,62 @@ class MultiTenantTokenManager:
             self.db.add(token_record)
 
         self.db.commit()
+
+    def _fetch_single_corp_access_token(self) -> str:
+        """单体模式下获取企业access_token
+
+        直接使用企业Secret获取token，不需要permanent_code
+
+        Returns:
+            str: access_token
+
+        Raises:
+            WxKfApiError: API调用失败
+        """
+        corp_id = self.config.corp_id
+        secret = self.config.corp_secret
+
+        # 尝试从缓存获取
+        cache_key = f"single:access_token:{corp_id}"
+        if self.redis:
+            cached = self.redis.get(cache_key)
+            if cached:
+                token_data = json.loads(cached)
+                expires_at = token_data.get("expires_at", 0)
+                if expires_at > time.time() + self.token_refresh_advance:
+                    return token_data["access_token"]
+
+        # 从微信获取新token
+        url = f"{self.BASE_URL}/gettoken"
+        params = {
+            "corpid": corp_id,
+            "corpsecret": secret
+        }
+
+        response = self._http_client.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+
+        if data.get("errcode", 0) != 0:
+            raise WxKfApiError(data["errcode"], data["errmsg"])
+
+        access_token = data["access_token"]
+        expires_in = data.get("expires_in", 7200)
+        expires_at = int(time.time()) + expires_in
+
+        # 保存到缓存
+        if self.redis:
+            token_data = {
+                "access_token": access_token,
+                "expires_at": expires_at
+            }
+            self.redis.setex(
+                cache_key,
+                expires_in - self.token_refresh_advance,
+                json.dumps(token_data)
+            )
+
+        return access_token
 
     def _fetch_corp_access_token(self, corp_id: str, permanent_code: str) -> str:
         """从微信获取企业access_token
