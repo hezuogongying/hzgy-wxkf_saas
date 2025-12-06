@@ -43,6 +43,8 @@ git clean -fd \
     -e .env \
     -e logs/ \
     -e uploads/ \
+    -e __pycache__/ \
+    -e '*.pyc' \
     -e '*.log'
 
 # 5. 显示同步结果
