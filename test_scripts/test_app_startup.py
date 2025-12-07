@@ -29,8 +29,9 @@ def test_database_connection():
     """测试数据库连接"""
     print("[2/4] 测试数据库连接...")
     try:
-        from core.database import get_engine
-        engine = get_engine()
+        from core.database import get_db_manager
+        db_manager = get_db_manager()
+        engine = db_manager.sync_engine
         with engine.connect() as conn:
             result = conn.execute("SELECT 1 as test")
             assert result.fetchone()[0] == 1
