@@ -11,7 +11,13 @@ scripts/
 wxkf_saas.egg-info/
 
 *.pyc
+*.pid
 .env
+gunicorn.pid
+gunicorn_conf.py
+uwsgi.ini
+*.sock
+*.log
 
 # Claude Code 本地设置
 .claude/settings.local.json
