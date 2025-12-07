@@ -24,7 +24,7 @@ def init_database():
 
         # 创建并初始化数据库管理器
         print("1. 创建数据库管理器...")
-        db_manager = DatabaseManager()
+        db_manager = DatabaseManager(config)
         print("   ✅ 数据库管理器创建成功")
 
         # 初始化数据库

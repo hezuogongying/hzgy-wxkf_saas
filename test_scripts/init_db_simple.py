@@ -32,7 +32,7 @@ def main():
         from core.database import DatabaseManager
 
         # 创建数据库管理器
-        db_manager = DatabaseManager()
+        db_manager = DatabaseManager(config)
 
         # 初始化数据库（同步方式）
         db_manager.init_sync()
