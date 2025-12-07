@@ -48,30 +48,49 @@ def main():
     test_dir = Path(__file__).parent
     test_files = sorted([
         f for f in test_dir.glob("test_*.py")
-        if f.name != "run_all_tests.py"
+        if f.name != "run_all_tests.py" and
+           not f.name.startswith("test_all") and  # 排除test_all_apis.py等
+           not f.name.endswith("_fixed.py")     # 排除修复版本的测试
     ])
 
-    # 添加 quick_test 作为快速检查（插在最前面）
-    quick_test = test_dir / "quick_test.py"
-    if quick_test.exists():
-        test_files.insert(0, quick_test)
+    # 定义测试优先级
+    priority_tests = [
+        "test_config.py",                # 配置测试（最先）
+        "test_jwt_auth_integration.py", # JWT认证测试
+        "test_alembic_migrations.py",    # 数据库迁移测试
+        "test_app_startup.py",           # 应用启动测试
+    ]
 
     # API 测试需要服务运行，放在最后
-    # 按优先级排序：基础测试 -> 原有API测试 -> 完整API测试
-    api_test = test_dir / "test_api_endpoints.py"
-    message_test = test_dir / "test_message_api.py"
-    complete_api_test = test_dir / "test_complete_api.py"
+    api_tests = [
+        "test_api_endpoints.py",
+        "test_message_api.py",
+        "test_message_complete_api.py",
+        "test_complete_api.py",
+    ]
 
-    # 移动 API 测试到最后
-    for test in [api_test, message_test]:
-        if test in test_files:
-            test_files.remove(test)
-            test_files.append(test)
+    # 重新排序测试文件
+    ordered_tests = []
 
-    # 完整API测试放在最最后
-    if complete_api_test in test_files:
-        test_files.remove(complete_api_test)
-        test_files.append(complete_api_test)
+    # 1. 添加优先级测试
+    for test_name in priority_tests:
+        test_path = test_dir / test_name
+        if test_path.exists():
+            ordered_tests.append(test_path)
+            if test_path in test_files:
+                test_files.remove(test_path)
+
+    # 2. 添加其他非API测试
+    non_api_tests = [f for f in test_files if f.name not in [t.split('/')[-1] for t in api_tests]]
+    ordered_tests.extend(non_api_tests)
+
+    # 3. 添加API测试（需要服务运行）
+    for test_name in api_tests:
+        test_path = test_dir / test_name
+        if test_path.exists() and test_path in test_files:
+            ordered_tests.append(test_path)
+
+    test_files = ordered_tests
 
     if not test_files:
         print("❌ 没有找到测试脚本")

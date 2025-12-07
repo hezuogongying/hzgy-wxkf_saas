@@ -56,6 +56,11 @@ class AuthService:
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
         """验证密码"""
+        # bcrypt只支持最多72字节的密码，如果超过则截断
+        if len(plain_password.encode('utf-8')) > 72:
+            # 先对长密码进行哈希，然后再进行bcrypt哈希
+            import hashlib
+            plain_password = hashlib.sha256(plain_password.encode('utf-8')).hexdigest()
         return pwd_context.verify(plain_password, hashed_password)
 
     @staticmethod
