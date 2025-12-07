@@ -57,16 +57,21 @@ def main():
         test_files.insert(0, quick_test)
 
     # API 测试需要服务运行，放在最后
+    # 按优先级排序：基础测试 -> 原有API测试 -> 完整API测试
     api_test = test_dir / "test_api_endpoints.py"
     message_test = test_dir / "test_message_api.py"
+    complete_api_test = test_dir / "test_complete_api.py"
 
     # 移动 API 测试到最后
-    if api_test in test_files:
-        test_files.remove(api_test)
-        test_files.append(api_test)
-    if message_test in test_files:
-        test_files.remove(message_test)
-        test_files.append(message_test)
+    for test in [api_test, message_test]:
+        if test in test_files:
+            test_files.remove(test)
+            test_files.append(test)
+
+    # 完整API测试放在最最后
+    if complete_api_test in test_files:
+        test_files.remove(complete_api_test)
+        test_files.append(complete_api_test)
 
     if not test_files:
         print("❌ 没有找到测试脚本")
