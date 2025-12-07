@@ -16,22 +16,24 @@ def init_database():
 
     try:
         # 导入数据库管理器
-        from core.database import get_db_manager
+        from core.database import DatabaseManager, get_db_manager
         from core.config import WxKfSaasConfig
 
         # 加载配置
         config = WxKfSaasConfig()
 
-        # 获取数据库管理器
-        db_manager = get_db_manager()
+        # 创建并初始化数据库管理器
+        print("1. 创建数据库管理器...")
+        db_manager = DatabaseManager()
+        print("   ✅ 数据库管理器创建成功")
 
         # 初始化数据库
-        print("1. 创建数据库表结构...")
+        print("2. 创建数据库表结构...")
         db_manager.init_sync()
         print("   ✅ 数据库表结构创建成功")
 
         # 测试连接
-        print("2. 测试数据库连接...")
+        print("3. 测试数据库连接...")
         engine = db_manager.sync_engine
         with engine.connect() as conn:
             result = conn.execute("SELECT 1 as test")
@@ -39,7 +41,7 @@ def init_database():
         print("   ✅ 数据库连接测试成功")
 
         # 检查表
-        print("3. 检查数据表...")
+        print("4. 检查数据表...")
         with engine.connect() as conn:
             result = conn.execute("SHOW TABLES")
             tables = [row[0] for row in result]
