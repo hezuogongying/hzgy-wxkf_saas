@@ -68,13 +68,24 @@ async def lifespan(app: FastAPI):
     # 启动时初始化数据库
     print("🚀 正在初始化数据库...")
     try:
+        # 优先尝试异步初始化
         db_manager = await init_database(config)
         print("✅ 数据库初始化成功（使用异步连接）")
     except Exception as e:
-        print(f"❌ 数据库初始化失败: {e}")
-        print("💡 提示：如果异步初始化失败，可能是 aiomysql 驱动问题")
-        print("   请检查 requirements.txt 中是否包含 aiomysql==0.2.0")
-        raise
+        print(f"⚠️ 异步初始化失败: {e}")
+        print("🔄 尝试使用同步初始化...")
+        try:
+            # 使用同步初始化作为备用
+            from core.database import init_database_sync
+            db_manager = init_database_sync(config)
+            print("✅ 数据库初始化成功（使用同步连接）")
+        except Exception as e2:
+            print(f"❌ 数据库初始化失败: {e2}")
+            print("\n💡 可能的解决方案：")
+            print("   1. 检查数据库服务是否运行")
+            print("   2. 检查配置中的数据库连接信息")
+            print("   3. 确保数据库 'wxkf_saas' 已创建")
+            raise e2
 
     yield
 
