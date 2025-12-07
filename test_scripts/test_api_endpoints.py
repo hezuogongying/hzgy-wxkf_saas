@@ -58,7 +58,7 @@ class APITester:
         self.log("测试租户信息接口...")
         try:
             response = requests.get(
-                f"{self.base_url}/tenant/{self.corp_id}",
+                f"{self.base_url}/api/tenants/{self.corp_id}",
                 timeout=10
             )
             if response.status_code == 200:
@@ -83,7 +83,7 @@ class APITester:
         self.log("测试客服账号列表接口...")
         try:
             response = requests.get(
-                f"{self.base_url}/tenant/{self.corp_id}/kf_accounts",
+                f"{self.base_url}/api/kf_accounts",
                 timeout=10
             )
             if response.status_code == 200:
@@ -109,7 +109,7 @@ class APITester:
         self.log("测试服务状态接口...")
         try:
             response = requests.get(
-                f"{self.base_url}/tenant/{self.corp_id}/service/status",
+                f"{self.base_url}/api/service/status",
                 timeout=10
             )
             if response.status_code == 200:
