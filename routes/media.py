@@ -4,8 +4,9 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
-from core.database import get_async_db
+from core.database import get_async_db, get_db
 from core.client import WxKfSaasClient
 from core.config import WxKfSaasConfig
 from api.media import MediaApi
@@ -30,10 +31,15 @@ class APIResponse(BaseModel):
     data: dict = {}
 
 
-async def get_client() -> WxKfSaasClient:
+def get_db_session(db_gen=Depends(get_db)) -> Session:
+    """从依赖注入的生成器中获取数据库会话"""
+    return next(db_gen)
+
+
+def get_client(db: Session = Depends(get_db_session)) -> WxKfSaasClient:
     """获取微信客服客户端实例"""
     config = WxKfSaasConfig()
-    return WxKfSaasClient(config)
+    return WxKfSaasClient(config, db)
 
 
 @router.post("/upload", response_model=UploadMediaResponse, summary="上传临时素材")
