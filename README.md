@@ -27,6 +27,7 @@
 - 🗄️ **多数据库支持** - 灵活配置，支持直接URL或环境变量
 - 🔄 **自动迁移** - 自动创建和更新表结构
 - 📝 **自动文档** - 基于FastAPI自动生成Swagger文档
+- 🔐 **JWT认证** - 完整的JWT认证和权限管理系统
 - 🔒 **完整安全** - 数据加密、权限控制、HTTPS支持
 
 ## 🏗️ 项目架构
@@ -38,21 +39,30 @@ wxkf_saas/
 │   ├── database.py            # 异步数据库管理器
 │   ├── token_manager.py       # 多租户Token管理器
 │   ├── client.py             # 微信API客户端
-│   └── exceptions.py         # 异常定义
+│   ├── exceptions.py         # 异常定义
+│   ├── security.py           # JWT认证和权限管理
+│   └── dependencies.py       # 依赖注入和中间件
 ├── models/                    # 数据模型
 │   ├── base.py               # 基础模型
 │   ├── tenant.py             # 租户模型
 │   ├── kf_account.py          # 客服账号模型
 │   ├── message.py            # 消息模型
-│   └── media.py              # 素材模型
+│   ├── media.py              # 素材模型
+│   └── user.py               # 用户模型
 ├── api/                       # API模块
 │   ├── kf_account.py          # 客服账号API
 │   ├── message.py             # 消息API
 │   └── media.py              # 素材API
 ├── routes/                    # FastAPI路由
-│   └── tenant.py             # 租户管理路由
+│   ├── tenant.py             # 租户管理路由
+│   ├── auth.py               # 认证相关路由
+│   └── health.py             # 健康检查路由
+├── test_scripts/              # 测试脚本目录
+├── dev_tmp/                   # 远程调试临时文件目录
+├── docs/                      # 开发说明文档目录
+├── dev_docs/                  # 知识库文件目录
 ├── main.py                    # 主应用入口
-├── requirements.txt             # 项目依赖
+├── requirements.txt           # 项目依赖
 ├── .env.example              # 配置文件示例
 └── README.md                 # 项目文档
 ```
@@ -196,6 +206,12 @@ REDIS_DB=0                                   # Redis数据库
 REDIS_PASSWORD=                               # Redis密码
 REDIS_KEY_PREFIX=wxkf_saas:                   # 键前缀
 
+# ===== JWT认证配置 =====
+SECRET_KEY=your-super-secret-jwt-key-here    # JWT签名密钥（生产环境必须更改）
+ALGORITHM=HS256                               # JWT算法
+ACCESS_TOKEN_EXPIRE_MINUTES=30               # 访问令牌过期时间（分钟）
+REFRESH_TOKEN_EXPIRE_DAYS=7                  # 刷新令牌过期时间（天）
+
 # ===== SSL/TLS配置 =====
 SSL_CERT_PATH=/path/to/cert.pem             # SSL证书路径
 SSL_KEY_PATH=/path/to/key.pem               # SSL私钥路径
@@ -211,26 +227,87 @@ LOG_FILE=/var/log/wxkf_saas/app.log         # 日志文件路径
 
 ## 📚 API使用
 
+### JWT认证
+
+#### 用户登录获取Token
+```python
+import requests
+
+# 用户登录
+response = requests.post("http://localhost:8083/api/auth/login", json={
+    "username": "admin",
+    "password": "password"
+})
+
+data = response.json()
+access_token = data["access_token"]
+refresh_token = data["refresh_token"]
+
+# 保存Token用于后续请求
+headers = {
+    "Authorization": f"Bearer {access_token}"
+}
+```
+
+#### 刷新Token
+```python
+# 当access_token过期时，使用refresh_token获取新的token
+response = requests.post("http://localhost:8083/api/auth/refresh", json={
+    "refresh_token": refresh_token
+})
+
+data = response.json()
+new_access_token = data["access_token"]
+```
+
+#### 用户注册
+```python
+response = requests.post("http://localhost:8083/api/auth/register", json={
+    "username": "newuser",
+    "password": "secure_password",
+    "email": "user@example.com",
+    "corp_id": "your_corp_id"  # 所属企业ID
+})
+
+user_id = response.json()["id"]
+```
+
+#### 获取当前用户信息
+```python
+response = requests.get(
+    "http://localhost:8083/api/auth/me",
+    headers=headers
+)
+
+user_info = response.json()
+```
+
 ### 租户管理
 
 #### 创建租户
 ```python
 import requests
 
-response = requests.post("http://localhost:8083/api/tenants/", json={
-    "corp_id": "your_corp_id",
-    "corp_name": "示例企业",
-    "contact_name": "张三",
-    "contact_phone": "13800138000",
-    "contact_email": "zhangsan@example.com"
-})
+response = requests.post("http://localhost:8083/api/tenants/",
+    json={
+        "corp_id": "your_corp_id",
+        "corp_name": "示例企业",
+        "contact_name": "张三",
+        "contact_phone": "13800138000",
+        "contact_email": "zhangsan@example.com"
+    },
+    headers=headers  # 需要认证
+)
 
 tenant_id = response.json()["id"]
 ```
 
 #### 获取租户列表
 ```python
-response = requests.get("http://localhost:8083/api/tenants/")
+response = requests.get(
+    "http://localhost:8083/api/tenants/",
+    headers=headers  # 需要认证
+)
 tenants = response.json()
 ```
 
@@ -258,6 +335,8 @@ async for db in get_async_db():
     kf_id = response.open_kfid
     print(f"客服账号ID: {kf_id}")
 ```
+
+**注意**: 调用微信API时，用户必须已登录并有相应权限
 
 ### 消息发送
 
@@ -407,6 +486,13 @@ spec:
 
 ## 🔒 安全性
 
+### JWT认证安全
+- 🔐 **双Token机制** - Access Token + Refresh Token组合
+- 🔄 **自动刷新** - Access Token过期自动使用Refresh Token更新
+- ⏰ **可配置过期时间** - 灵活设置Token有效期
+- 🛡️ **Token黑名单** - 主动作废Token机制
+- 🔒 **密码加密存储** - 使用bcrypt哈希加密用户密码
+
 ### Token安全
 - 🔐 **数据库加密存储** - Token在数据库中加密存储
 - 🔄 **自动刷新机制** - Token过期前自动刷新，避免服务中断
@@ -418,6 +504,7 @@ spec:
 - 🔒 **HTTPS支持** - 生产环境强制使用HTTPS
 - 🛡️ **CORS控制** - 可配置的跨域资源共享控制
 - 🚨 **异常处理** - 完整的异常处理和错误提示
+- 🎯 **权限控制** - 基于角色的访问控制(RBAC)
 
 ### 数据安全
 - 🔐 **密码加密** - 敏感配置使用环境变量或密钥管理
@@ -453,13 +540,26 @@ spec:
 
 ### 主要端点
 
+#### 认证相关
 | 方法 | 路径 | 描述 | 参数 |
 |------|------|------|------|
-| POST | `/api/tenants/` | 创建租户 | 租户信息 |
-| GET | `/api/tenants/` | 获取租户列表 | 分页参数 |
-| GET | `/api/tenants/{corp_id}` | 获取租户详情 | 租户ID |
-| PUT | `/api/tenants/{corp_id}` | 更新租户 | 租户ID + 更新信息 |
-| DELETE | `/api/tenants/{corp_id}` | 删除租户 | 租户ID |
+| POST | `/api/auth/register` | 用户注册 | 用户信息 |
+| POST | `/api/auth/login` | 用户登录 | 用户名/密码 |
+| POST | `/api/auth/refresh` | 刷新Token | refresh_token |
+| GET | `/api/auth/me` | 获取当前用户信息 | 需要认证 |
+
+#### 租户管理
+| 方法 | 路径 | 描述 | 参数 |
+|------|------|------|------|
+| POST | `/api/tenants/` | 创建租户 | 租户信息（需认证） |
+| GET | `/api/tenants/` | 获取租户列表 | 分页参数（需认证） |
+| GET | `/api/tenants/{corp_id}` | 获取租户详情 | 租户ID（需认证） |
+| PUT | `/api/tenants/{corp_id}` | 更新租户 | 租户ID + 更新信息（需认证） |
+| DELETE | `/api/tenants/{corp_id}` | 删除租户 | 租户ID（需认证） |
+
+#### 健康检查
+| 方法 | 路径 | 描述 | 参数 |
+|------|------|------|------|
 | GET | `/` | 健康检查 | 无 |
 | GET | `/health` | 详细健康检查 | 无 |
 
