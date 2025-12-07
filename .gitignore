@@ -2,8 +2,8 @@ venv/
 docs/
 dev_docs/
 dev_tmp/
-# test_scripts/  # 已解除忽略
-# tests/         # 已解除忽略
+# test_scripts/  # 已解除忽略（生产环境需要）
+tests/           # 忽略标准测试套件（生产环境不需要）
 logs/
 __pycache__/
 htmlcov/
