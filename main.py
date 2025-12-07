@@ -194,7 +194,7 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 
 # 挂载路由
-app.include_router(auth_router, tags=["认证"], prefix="/api/v1")
+app.include_router(auth_router, tags=["认证"])
 app.include_router(tenant_router)
 app.include_router(kf_account_router)
 app.include_router(message_router)

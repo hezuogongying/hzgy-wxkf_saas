@@ -18,12 +18,14 @@ class AuthMiddleware(BaseHTTPMiddleware):
     # 不需要认证的路径
     SKIP_AUTH_PATHS = {
         "/health",
-        "/login",
-        "/register",
-        "/refresh-token",
+        "/auth/login",
+        "/auth/register",
+        "/auth/refresh",
         "/docs",
         "/redoc",
         "/openapi.json",
+        "/favicon.ico",
+        "/static/",
     }
 
     def __init__(self, app, skip_paths: Optional[list] = None):
