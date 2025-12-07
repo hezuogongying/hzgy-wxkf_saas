@@ -18,7 +18,7 @@ class JWTAuthTester:
 
     def __init__(self):
         from core.config import WxKfSaasConfig
-        self.config = WxKkSaasConfig()
+        self.config = WxKfSaasConfig()
 
         # API基础URL
         self.base_url = f"http://localhost:{self.config.fastapi_port}"
