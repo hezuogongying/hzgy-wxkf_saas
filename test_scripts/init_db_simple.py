@@ -46,7 +46,7 @@ def main():
             print("   ✅ 数据库已经初始化，跳过创建表")
         else:
             print("   📝 数据库未初始化，开始创建表...")
-            db_manager.init_sync()
+            db_manager.create_tables_sync()
             print("   ✅ 数据库表结构创建成功")
 
         # 3. 测试连接

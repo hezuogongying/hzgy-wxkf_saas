@@ -29,7 +29,7 @@ def init_database():
 
         # 初始化数据库
         print("2. 创建数据库表结构...")
-        db_manager.init_sync()
+        db_manager.create_tables_sync()
         print("   ✅ 数据库表结构创建成功")
 
         # 测试连接
