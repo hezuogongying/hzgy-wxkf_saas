@@ -57,12 +57,9 @@ class APITester:
         """测试租户信息接口"""
         self.log("测试租户信息接口...")
 
-        # 单体模式不需要租户管理
-        if self.config.mode == "single":
-            self.log("   单体模式下无需租户管理")
-            self.log("   ✅ 跳过租户测试")
-            self.results.append(("租户信息", True, "单体模式跳过"))
-            return True
+        # 即使是单体模式，API 也应该能返回企业信息
+        self.log(f"   模式: {self.config.mode}")
+        self.log(f"   企业ID: {self.corp_id}")
 
         try:
             response = requests.get(
@@ -79,6 +76,7 @@ class APITester:
             else:
                 error = response.json().get('detail', f"状态码: {response.status_code}")
                 self.log(f"❌ 租户信息获取失败: {error}")
+                self.log(f"   提示: 可能需要先在数据库中创建租户记录")
                 self.results.append(("租户信息", False, error))
                 return False
         except Exception as e:
@@ -92,7 +90,7 @@ class APITester:
         try:
             params = {"corp_id": self.corp_id}
             response = requests.get(
-                f"{self.base_url}/api/kf_accounts",
+                f"{self.base_url}/api/kf-accounts/",
                 params=params,
                 timeout=10
             )
@@ -190,7 +188,7 @@ class APITester:
             ("API文档", self.test_docs_available),
             ("租户信息", self.test_tenant_info),
             ("客服账号列表", self.test_kf_accounts),
-            ("服务状态", self.test_service_status),
+            # ("服务状态", self.test_service_status),  # 注释掉，接口不存在
         ]
 
         for name, test_func in tests:
