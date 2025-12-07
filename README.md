@@ -138,6 +138,8 @@ cp .env.example .env
 
 ### 2. 数据库初始化
 
+本项目使用 Alembic 进行数据库迁移管理。
+
 ```bash
 # MySQL (推荐生产环境)
 mysql -u root -p -e "CREATE DATABASE wxkf_saas CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
@@ -147,7 +149,31 @@ psql -U postgres -c "CREATE DATABASE wxkf_saas ENCODING 'UTF8';"
 
 # SQLite (开发测试)
 # 数据库目录会自动创建
+
+# 应用数据库迁移
+python manage_migrations.py upgrade
 ```
+
+### 数据库迁移管理
+
+```bash
+# 创建新的迁移（当模型变化时）
+python manage_migrations.py create -m "添加新字段"
+
+# 升级数据库到最新版本
+python manage_migrations.py upgrade
+
+# 查看迁移历史
+python manage_migrations.py history
+
+# 查看当前版本
+python manage_migrations.py current
+
+# 降级数据库（回滚）
+python manage_migrations.py downgrade
+```
+
+详细文档请参考 [数据库迁移管理](docs/database-migrations.md)。
 
 ### 3. 启动服务
 
