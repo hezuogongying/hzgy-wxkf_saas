@@ -29,8 +29,17 @@ def test_database_connection():
     """测试数据库连接"""
     print("[2/4] 测试数据库连接...")
     try:
-        from core.database import get_db_manager
-        db_manager = get_db_manager()
+        from core.database import DatabaseManager
+        from core.config import WxKfSaasConfig
+
+        # 加载配置
+        config = WxKfSaasConfig()
+
+        # 创建数据库管理器并初始化
+        db_manager = DatabaseManager()
+        db_manager.init_sync()
+
+        # 测试连接
         engine = db_manager.sync_engine
         with engine.connect() as conn:
             result = conn.execute("SELECT 1 as test")
