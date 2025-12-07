@@ -45,7 +45,14 @@ try:
     config = WxKfSaasConfig()
     config.validate_config()
     print("✅ 配置加载成功")
-    print(f"   数据库: {config.db_host}:{config.db_port}/{config.db_name}")
+    # 从数据库URL解析连接信息
+    try:
+        import urllib.parse
+        parsed = urllib.parse.urlparse(config.database_url)
+        db_info = f"{parsed.hostname}:{parsed.port}/{parsed.path.lstrip('/')}"
+        print(f"   数据库: {db_info}")
+    except:
+        print(f"   数据库: {config.database_url}")
     print(f"   Redis: {config.redis_host}:{config.redis_port}/{config.redis_db}")
     print(f"   服务端口: {config.fastapi_port}")
 except Exception as e:
@@ -196,7 +203,7 @@ def detailed_health_check():
         "service": "wxkf_saas_api",
         "version": "1.0.0",
         "config": {
-            "database": f"{config.db_host}:{config.db_port}/{config.db_name}",
+            "database": config.database_url,
             "redis": f"{config.redis_host}:{config.redis_port}/{config.redis_db}",
         }
     }
