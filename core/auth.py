@@ -11,12 +11,12 @@ from fastapi import HTTPException, status
 
 from core.config import WxKfSaasConfig
 
-
-# JWT配置
-JWT_SECRET_KEY = secrets.token_urlsafe(32)  # 生产环境应该从环境变量读取
-JWT_ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7天
-REFRESH_TOKEN_EXPIRE_DAYS = 30
+# JWT配置 - 从环境变量读取
+config = WxKfSaasConfig()
+JWT_SECRET_KEY = config.secret_key
+JWT_ALGORITHM = config.jwt_algorithm
+ACCESS_TOKEN_EXPIRE_MINUTES = config.access_token_expire_minutes
+REFRESH_TOKEN_EXPIRE_DAYS = config.refresh_token_expire_days
 
 # 密码加密
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

@@ -99,6 +99,12 @@ class WxKfSaasConfig(BaseSettings):
     openai_model_name: Optional[str] = "gpt-3.5-turbo"
     openai_system_prompt: Optional[str] = None
 
+    # ===== JWT认证配置 =====
+    secret_key: str = "your-super-secret-jwt-key-change-in-production"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60
+    refresh_token_expire_days: int = 7
+
     # ===== 日志配置 =====
     log_level: str = "INFO"
     log_file: Optional[str] = None
