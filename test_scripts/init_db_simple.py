@@ -36,8 +36,9 @@ def main():
 
         # 检查表是否已存在
         engine = db_manager.sync_engine
+        from sqlalchemy import text
         with engine.connect() as conn:
-            result = conn.execute("SHOW TABLES")
+            result = conn.execute(text("SHOW TABLES"))
             existing_tables = [row[0] for row in result]
 
         # 检查关键表是否存在
@@ -53,14 +54,14 @@ def main():
         print("\n3. 测试数据库连接...")
         engine = db_manager.sync_engine
         with engine.connect() as conn:
-            result = conn.execute("SELECT 1")
+            result = conn.execute(text("SELECT 1"))
             assert result.fetchone()[0] == 1
         print("   ✅ 数据库连接正常")
 
         # 4. 检查表
         print("\n4. 检查数据表...")
         with engine.connect() as conn:
-            result = conn.execute("SHOW TABLES")
+            result = conn.execute(text("SHOW TABLES"))
             tables = [row[0] for row in result]
             print(f"   已创建的表: {', '.join(tables)}")
 

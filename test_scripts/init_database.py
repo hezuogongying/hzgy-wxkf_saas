@@ -35,15 +35,16 @@ def init_database():
         # 测试连接
         print("3. 测试数据库连接...")
         engine = db_manager.sync_engine
+        from sqlalchemy import text
         with engine.connect() as conn:
-            result = conn.execute("SELECT 1 as test")
+            result = conn.execute(text("SELECT 1 as test"))
             assert result.fetchone()[0] == 1
         print("   ✅ 数据库连接测试成功")
 
         # 检查表
         print("4. 检查数据表...")
         with engine.connect() as conn:
-            result = conn.execute("SHOW TABLES")
+            result = conn.execute(text("SHOW TABLES"))
             tables = [row[0] for row in result]
             print(f"   已创建的表: {', '.join(tables)}")
 
