@@ -82,8 +82,10 @@ class APITester:
         """测试客服账号列表"""
         self.log("测试客服账号列表接口...")
         try:
+            params = {"corp_id": self.corp_id}
             response = requests.get(
                 f"{self.base_url}/api/kf_accounts",
+                params=params,
                 timeout=10
             )
             if response.status_code == 200:
