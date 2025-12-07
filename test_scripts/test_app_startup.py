@@ -35,9 +35,8 @@ def test_database_connection():
         # 加载配置
         config = WxKfSaasConfig()
 
-        # 创建数据库管理器并初始化
+        # 创建数据库管理器
         db_manager = DatabaseManager(config)
-        db_manager.init_sync()
 
         # 测试连接
         engine = db_manager.sync_engine

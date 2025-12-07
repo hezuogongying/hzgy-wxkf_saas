@@ -28,15 +28,26 @@ def main():
         print("   ✅ 配置加载成功")
 
         # 2. 导入并初始化数据库
-        print("\n2. 初始化数据库...")
+        print("\n2. 检查数据库状态...")
         from core.database import DatabaseManager
 
         # 创建数据库管理器
         db_manager = DatabaseManager(config)
 
-        # 初始化数据库（同步方式）
-        db_manager.init_sync()
-        print("   ✅ 数据库表结构创建成功")
+        # 检查表是否已存在
+        engine = db_manager.sync_engine
+        with engine.connect() as conn:
+            result = conn.execute("SHOW TABLES")
+            existing_tables = [row[0] for row in result]
+
+        # 检查关键表是否存在
+        key_tables = ['tenants']
+        if all(table in existing_tables for table in key_tables):
+            print("   ✅ 数据库已经初始化，跳过创建表")
+        else:
+            print("   📝 数据库未初始化，开始创建表...")
+            db_manager.init_sync()
+            print("   ✅ 数据库表结构创建成功")
 
         # 3. 测试连接
         print("\n3. 测试数据库连接...")
