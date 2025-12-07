@@ -78,7 +78,7 @@ def main():
     results = []
     for test_file in test_files:
         success = run_test_file(test_file)
-        results.append((test_file.name, success))
+        results.append((test_file.name, success, None))  # None 作为占位符
 
     # 汇总结果
     print("\n" + "="*80)
@@ -86,22 +86,33 @@ def main():
     print("="*80)
 
     total = len(results)
-    passed = sum(1 for _, success in results if success)
+    passed = sum(1 for result in results if len(result) >= 2 and result[1])
+    failed = total - passed
 
-    for name, success in results:
-        status = "✅ 通过" if success else "❌ 失败"
-        print(f"  {name:<30} {status}")
+    # 详细显示每个测试结果
+    print("\n✅ 通过的测试:")
+    for result in results:
+        if len(result) >= 2 and result[1]:  # result[1] 是 success
+            print(f"  - {result[0]} API 端点测试通过")
 
-    print(f"\n总计: {passed}/{total} 通过")
+    if failed > 0:
+        print("\n❌ 失败的测试:")
+        for result in results:
+            if len(result) >= 2 and not result[1]:
+                error_msg = f": {result[2]}" if len(result) > 2 else ""
+                print(f"  - {result[0]} API 端点测试失败{error_msg}")
+
+    print(f"\n" + "="*80)
+    print(f"总计: {passed} 个 API 端点测试通过，{failed} 个 API 端点测试失败")
+    print("="*80)
 
     if passed == total:
-        print("\n🎉 所有测试通过！")
+        print("\n🎉 所有 API 端点测试通过！")
         exit_code = 0
     else:
-        print(f"\n⚠️ {total - passed} 个测试失败")
+        print(f"\n⚠️ {failed} 个 API 端点测试失败，请检查相关功能")
         exit_code = 1
 
-    print("="*80)
     sys.exit(exit_code)
 
 

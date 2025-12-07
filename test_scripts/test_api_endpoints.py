@@ -210,25 +210,32 @@ class APITester:
 
         total = len(self.results)
         passed = sum(1 for _, success, _ in self.results if success)
+        failed = total - passed
 
+        print("\n✅ 通过的 API 端点:")
         for name, success, error in self.results:
-            status = "✅ 通过" if success else "❌ 失败"
-            print(f"  {name:<20} {status}")
-            if error:
-                print(f"    错误: {error}")
+            if success:
+                print(f"  - {name} API 端点测试通过")
 
-        print(f"\n总计: {passed}/{total} 通过")
+        if failed > 0:
+            print("\n❌ 失败的 API 端点:")
+            for name, success, error in self.results:
+                if not success:
+                    error_msg = f": {error}" if error else ""
+                    print(f"  - {name} API 端点测试失败{error_msg}")
+
+        print(f"\n" + "="*80)
+        print(f"总计: {passed} 个 API 端点测试通过，{failed} 个 API 端点测试失败")
+        print("="*80)
 
         if passed == total:
             print("\n🎉 所有 API 测试通过！")
         else:
-            print(f"\n⚠️ {total - passed} 个测试失败")
+            print(f"\n⚠️ {failed} 个 API 端点测试失败")
             print("\n💡 提示：")
             print("  - 确保服务已启动（python main.py 或 gunicorn）")
             print("  - 检查 .env 中的配置是否正确")
             print("  - 部分接口需要有效的 access_token")
-
-        print("="*80)
 
 
 def main():
