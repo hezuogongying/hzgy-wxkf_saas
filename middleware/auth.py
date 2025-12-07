@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """认证中间件"""
 
-from fastapi import Request, HTTPException, status
+from fastapi import Request, HTTPException, status, Depends
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 from typing import Optional
