@@ -64,42 +64,16 @@ class UserInfo(BaseModel):
     created_at: datetime
 
 
-# 模拟用户数据库
-MOCK_USERS = {
-    "admin": {
-        "id": "admin",
-        "username": "admin",
-        "password": AuthService.get_password_hash("admin123"),
-        "email": "admin@example.com",
-        "corp_id": "ww4c543662478cf668",
-        "role": "admin",
-        "permissions": ["admin", "read", "write", "delete"],
-        "is_active": True,
-        "created_at": datetime.now()
-    },
-    "user1": {
-        "id": "user1",
-        "username": "user1",
-        "password": AuthService.get_password_hash("user123"),
-        "email": "user1@example.com",
-        "corp_id": "ww4c543662478cf669",
-        "role": "user",
-        "permissions": ["read", "write"],
-        "is_active": True,
-        "created_at": datetime.now()
-    }
-}
-
-
-# 模拟刷新Token存储
-REFRESH_TOKENS = {}
+# 模拟用户数据库和Token存储
+from core.mock_users import get_users, get_refresh_tokens
 
 
 @router.post("/login", response_model=LoginResponse)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """用户登录"""
     # 验证用户
-    user_data = MOCK_USERS.get(form_data.username)
+    users = get_users()
+    user_data = users.get(form_data.username)
     if not user_data or not AuthService.verify_password(form_data.password, user_data["password"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -127,7 +101,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     tokens = AuthService.create_user_tokens(user)
 
     # 保存刷新Token
-    REFRESH_TOKENS[tokens["refresh_token"]] = user.id
+    refresh_tokens = get_refresh_tokens()
+    refresh_tokens[tokens["refresh_token"]] = user.id
 
     return LoginResponse(
         access_token=tokens["access_token"],
@@ -150,14 +125,17 @@ async def refresh_token(request_data: RefreshTokenRequest):
     refresh_token = request_data.refresh_token
 
     # 验证刷新Token
-    user_id = REFRESH_TOKENS.get(refresh_token)
+    refresh_tokens = get_refresh_tokens()
+    users = get_users()
+
+    user_id = refresh_tokens.get(refresh_token)
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="无效的刷新令牌"
         )
 
-    user_data = MOCK_USERS.get(user_id)
+    user_data = users.get(user_id)
     if not user_data or not user_data["is_active"]:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

@@ -61,6 +61,11 @@ class AuthService:
     @staticmethod
     def get_password_hash(password: str) -> str:
         """生成密码哈希"""
+        # bcrypt只支持最多72字节的密码，如果超过则截断
+        if len(password.encode('utf-8')) > 72:
+            # 先对长密码进行哈希，然后再进行bcrypt哈希
+            import hashlib
+            password = hashlib.sha256(password.encode('utf-8')).hexdigest()
         return pwd_context.hash(password)
 
     @staticmethod
