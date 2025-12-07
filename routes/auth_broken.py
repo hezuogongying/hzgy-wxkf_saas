@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""认证相关路由 - 简化版本"""
+"""认证相关路由"""
 
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -7,7 +7,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr
 
 from core.auth import AuthService, User, TokenData
-from middleware.auth import get_current_active_user
+from middleware.auth import get_current_user, get_current_active_user
 
 router = APIRouter(prefix="/auth", tags=["认证"])
 
@@ -46,8 +46,8 @@ class RefreshTokenResponse(BaseModel):
 class UserRegister(BaseModel):
     """用户注册"""
     username: str
-    password: str
     email: EmailStr
+    password: str
     corp_id: str
     role: str = "user"
 
@@ -64,30 +64,16 @@ class UserInfo(BaseModel):
     created_at: datetime
 
 
-# 模拟用户数据库
-USERS_DB = {
-    "admin": {
-        "id": "admin",
-        "username": "admin",
-        "password": AuthService.get_password_hash("admin123"),
-        "email": "admin@example.com",
-        "corp_id": "ww4c543662478cf668",
-        "role": "admin",
-        "permissions": ["admin", "read", "write", "delete"],
-        "is_active": True,
-        "created_at": datetime.now()
-    }
-}
-
-# 模拟刷新Token存储
-REFRESH_TOKENS_DB = {}
+# 模拟用户数据库和Token存储
+from core.mock_users import get_users, get_refresh_tokens
 
 
 @router.post("/login", response_model=LoginResponse)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """用户登录"""
     # 验证用户
-    user_data = USERS_DB.get(form_data.username)
+    users = get_users()
+    user_data = users.get(form_data.username)
     if not user_data or not AuthService.verify_password(form_data.password, user_data["password"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -115,7 +101,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     tokens = AuthService.create_user_tokens(user)
 
     # 保存刷新Token
-    REFRESH_TOKENS_DB[tokens["refresh_token"]] = user.id
+    refresh_tokens = get_refresh_tokens()
+    refresh_tokens[tokens["refresh_token"]] = user.id
 
     return LoginResponse(
         access_token=tokens["access_token"],
@@ -138,14 +125,17 @@ async def refresh_token(request_data: RefreshTokenRequest):
     refresh_token = request_data.refresh_token
 
     # 验证刷新Token
-    user_id = REFRESH_TOKENS_DB.get(refresh_token)
+    refresh_tokens = get_refresh_tokens()
+    users = get_users()
+
+    user_id = refresh_tokens.get(refresh_token)
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="无效的刷新令牌"
         )
 
-    user_data = USERS_DB.get(user_id)
+    user_data = users.get(user_id)
     if not user_data or not user_data["is_active"]:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -162,7 +152,7 @@ async def refresh_token(request_data: RefreshTokenRequest):
         is_active=user_data["is_active"]
     )
 
-    access_token_expires = datetime.utcnow() + datetime.timedelta(minutes=60 * 24 * 7)
+    access_token_expires = datetime.utcnow() + timedelta(minutes=60 * 24 * 7)
     access_token = AuthService.create_access_token(
         data={
             "sub": user.id,
@@ -180,12 +170,46 @@ async def refresh_token(request_data: RefreshTokenRequest):
     )
 
 
+@router.post("/register", response_model=dict)
+async def register(user_data: UserRegister):
+    """用户注册"""
+    # 检查用户是否已存在
+    if user_data.username in MOCK_USERS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="用户名已存在"
+        )
+
+    # TODO: 验证corp_id是否有效
+
+    # 创建用户（模拟）
+    new_user = {
+        "id": f"user_{datetime.now().timestamp()}",
+        "username": user_data.username,
+        "password": AuthService.get_password_hash(user_data.password),
+        "email": user_data.email,
+        "corp_id": user_data.corp_id,
+        "role": user_data.role,
+        "permissions": ["read"] if user_data.role == "user" else ["read", "write"],
+        "is_active": True,
+        "created_at": datetime.now()
+    }
+
+    MOCK_USERS[user_data.username] = new_user
+
+    return {
+        "message": "用户注册成功",
+        "user_id": new_user["id"],
+        "username": new_user["username"]
+    }
+
+
 @router.get("/me", response_model=UserInfo)
 async def get_current_user_info(
     current_user: User = Depends(get_current_active_user)
 ):
     """获取当前用户信息"""
-    user_data = USERS_DB.get(current_user.username)
+    user_data = MOCK_USERS.get(current_user.username)
     if not user_data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -202,3 +226,26 @@ async def get_current_user_info(
         is_active=user_data["is_active"],
         created_at=user_data["created_at"]
     )
+
+
+@router.post("/logout")
+async def logout(
+    current_user: User = Depends(get_current_active_user)
+):
+    """用户登出"""
+    # TODO: 将Token加入黑名单或删除
+    return {"message": "登出成功"}
+
+
+@router.get("/verify-token")
+async def verify_token(
+    token: str = Depends(oauth2_scheme),
+    current_user: User = Depends(get_current_user)
+):
+    """验证Token有效性"""
+    return {
+        "valid": True,
+        "user_id": current_user.id,
+        "corp_id": current_user.corp_id,
+        "role": current_user.role
+    }
