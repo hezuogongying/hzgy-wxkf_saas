@@ -56,6 +56,14 @@ class APITester:
     def test_tenant_info(self):
         """测试租户信息接口"""
         self.log("测试租户信息接口...")
+
+        # 单体模式不需要租户管理
+        if self.config.mode == "single":
+            self.log("   单体模式下无需租户管理")
+            self.log("   ✅ 跳过租户测试")
+            self.results.append(("租户信息", True, "单体模式跳过"))
+            return True
+
         try:
             response = requests.get(
                 f"{self.base_url}/api/tenants/{self.corp_id}",
