@@ -36,6 +36,10 @@ if str(project_root) in sys.path:
     from routes.media import router as media_router
     from routes.callback import router as callback_router
     from routes.contact import router as contact_router
+    from routes.auth import router as auth_router
+
+    # 导入认证中间件
+    from middleware.auth import AuthMiddleware
 else:
     raise ImportError("无法添加项目路径到 sys.path")
 
@@ -120,6 +124,9 @@ app.add_middleware(
     max_age=600
 )
 
+# 添加JWT认证中间件
+app.add_middleware(AuthMiddleware)
+
 
 # 全局异常处理器
 @app.exception_handler(WxKfApiError)
@@ -187,6 +194,7 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 
 # 挂载路由
+app.include_router(auth_router, tags=["认证"], prefix="/api/v1")
 app.include_router(tenant_router)
 app.include_router(kf_account_router)
 app.include_router(message_router)
