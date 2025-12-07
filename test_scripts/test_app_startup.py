@@ -41,7 +41,9 @@ def test_database_connection():
         # 测试连接
         engine = db_manager.sync_engine
         with engine.connect() as conn:
-            result = conn.execute("SELECT 1 as test")
+            # 使用 text() 包装 SQL 字符串
+            from sqlalchemy import text
+            result = conn.execute(text("SELECT 1 as test"))
             assert result.fetchone()[0] == 1
         print("✅ 数据库连接成功")
         return True

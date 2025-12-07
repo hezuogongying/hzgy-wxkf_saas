@@ -31,11 +31,18 @@ def test_database():
     """测试数据库"""
     print("\n[数据库测试]")
     try:
-        from core.database import get_db_manager
-        db_manager = get_db_manager()
+        from core.database import DatabaseManager
+        from core.config import WxKfSaasConfig
+
+        # 加载配置
+        config = WxKfSaasConfig()
+
+        # 创建数据库管理器
+        db_manager = DatabaseManager(config)
         engine = db_manager.sync_engine
         with engine.connect() as conn:
-            conn.execute("SELECT 1")
+            from sqlalchemy import text
+            conn.execute(text("SELECT 1"))
         print("✅ 数据库连接正常")
         return True
     except Exception as e:
