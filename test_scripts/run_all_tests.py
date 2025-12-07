@@ -51,10 +51,22 @@ def main():
         if f.name != "run_all_tests.py"
     ])
 
-    # 添加 quick_test 作为快速检查
+    # 添加 quick_test 作为快速检查（插在最前面）
     quick_test = test_dir / "quick_test.py"
     if quick_test.exists():
         test_files.insert(0, quick_test)
+
+    # API 测试需要服务运行，放在最后
+    api_test = test_dir / "test_api_endpoints.py"
+    message_test = test_dir / "test_message_api.py"
+
+    # 移动 API 测试到最后
+    if api_test in test_files:
+        test_files.remove(api_test)
+        test_files.append(api_test)
+    if message_test in test_files:
+        test_files.remove(message_test)
+        test_files.append(message_test)
 
     if not test_files:
         print("❌ 没有找到测试脚本")
