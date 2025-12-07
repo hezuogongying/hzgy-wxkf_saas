@@ -57,13 +57,12 @@ def test_message_models():
     """测试消息模型"""
     print("\n[3/4] 测试消息模型...")
     try:
-        from core.models.message import TextMessageRequest
+        from models.message import SendTextMessageRequest
 
         # 构造测试消息
-        test_message = TextMessageRequest(
+        test_message = SendTextMessageRequest(
             touser="test_user",
-            agentid=1000001,
-            msgtype="text",
+            open_kfid="kf001@xxx",  # 测试客服账号ID
             text={
                 "content": "测试消息内容"
             }
@@ -71,7 +70,8 @@ def test_message_models():
 
         print(f"   ✅ 文本消息模型创建成功")
         print(f"   接收人: {test_message.touser}")
-        print(f"   消息类型: {test_message.msgtype}")
+        print(f"   客服ID: {test_message.open_kfid}")
+        print(f"   消息内容: {test_message.text.content}")
         return True
     except Exception as e:
         print(f"   ❌ 消息模型测试失败: {e}")
